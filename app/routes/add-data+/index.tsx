@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,7 +8,7 @@ import {
   SelectValue,
   SelectItem,
 } from "@/components/ui/select";
-import { XIcon, PlusIcon } from "lucide-react";
+import { XIcon, PlusIcon, CodeXml } from "lucide-react";
 import { useNavigate } from "react-router";
 import { saveFormStep, loadFormDraft } from "@/lib/localStorage";
 import { generateXml } from "@/lib/xml";
@@ -20,6 +20,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { MandatoryFieldsSchema, type MandatoryFieldsType } from "@/types/fields";
 
 const titleTypeOptions = [
   "AlternativeTitle",
@@ -45,141 +46,189 @@ const resourceTypeGeneralOptions = [
 export default function MandatoryFields() {
   const saved = loadFormDraft().mandatory || {};
   const navigate = useNavigate();
-  function handleNext() {
-    saveFormStep("mandatory", {
-      titles,
-      creators,
-      publisher,
-      publicationYear,
-      resourceType,
-    });
-    navigate("recommended-fields");
-  }
-  const [titles, setTitles] = useState(
-    saved.titles || [{ title: "", lang: "", titleType: "" }]
-  );
-  const [creators, setCreators] = useState(
-    saved.creators || [
-      {
-        name: "",
-        nameType: "",
-        givenName: "",
-        familyName: "",
-        nameIdentifier: "",
-        nameIdentifierScheme: "",
-        schemeURI: "",
-        affiliation: "",
-        lang: "",
-      },
-    ]
-  );
-
-  const [publisher, setPublisher] = useState(
-    saved.publisher || { name: "", lang: "" }
-  );
-  const [publicationYear, setPublicationYear] = useState(
-    saved.publicationYear || ""
-  );
-  const [resourceType, setResourceType] = useState(
-    saved.resourceType || { type: "", general: "" }
-  );
-
+  const formRef = useRef<HTMLFormElement>(null);
   const [xmlOutput, setXmlOutput] = useState("");
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
-  // Generate XML when data changes
+  // Initialize with saved data or defaults
+  const initialTitleCount = saved.titles?.length || 1;
+  const initialCreatorCount = saved.creators?.length || 1;
 
-  useEffect(() => {
-    setXmlOutput(
-      generateXml({
-        mandatory: {
-          titles,
-          creators,
-          publisher,
-          publicationYear,
-          resourceType,
-        },
-      })
-    );
-  }, [titles, creators, publisher, publicationYear, resourceType]);
+  const [titleCount, setTitleCount] = useState(initialTitleCount);
+  const [creatorCount, setCreatorCount] = useState(initialCreatorCount);
 
-  function handleAddTitle() {
-    setTitles([...titles, { title: "", lang: "", titleType: "" }]);
-  }
+  const handleAddTitle = () => setTitleCount((prev) => prev + 1);
+  const handleRemoveTitle = (index: number) => {
+    setTitleCount((prev) => prev - 1);
+    // Clear errors for removed title
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      Object.keys(prev).forEach((key) => {
+        if (key.startsWith(`titles.${index}`)) {
+          delete newErrors[key];
+        }
+      });
+      return newErrors;
+    });
+  };
 
-  function handleRemoveTitle(index: number) {
-    setTitles(titles.filter((_, i) => i !== index));
-  }
+  const handleAddCreator = () => setCreatorCount((prev) => prev + 1);
+  const handleRemoveCreator = (index: number) => {
+    setCreatorCount((prev) => prev - 1);
+    // Clear errors for removed creator
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      Object.keys(prev).forEach((key) => {
+        if (key.startsWith(`creators.${index}`)) {
+          delete newErrors[key];
+        }
+      });
+      return newErrors;
+    });
+  };
 
-  function handleAddCreator() {
-    setCreators([...creators, { ...creators[0] }]);
-  }
+  const getError = (path: string) => errors[path]?.[0] || "";
 
-  function handleRemoveCreator(index: number) {
-    setCreators(creators.filter((_, i) => i !== index));
-  }
+  const parseFormData = (): MandatoryFieldsType => {
+    const formData = new FormData(formRef.current!);
+
+    return {
+      titles: Array.from({ length: titleCount }).map((_, i) => ({
+        title: formData.get(`titles[${i}].title`) as string,
+        lang: formData.get(`titles[${i}].lang`) as string,
+        titleType: formData.get(`titles[${i}].titleType`) as string,
+      })),
+      creators: Array.from({ length: creatorCount }).map((_, i) => ({
+        name: formData.get(`creators[${i}].name`) as string,
+        nameType: formData.get(`creators[${i}].nameType`) as string,
+        givenName: formData.get(`creators[${i}].givenName`) as string,
+        familyName: formData.get(`creators[${i}].familyName`) as string,
+        nameIdentifier: formData.get(`creators[${i}].nameIdentifier`) as string,
+        nameIdentifierScheme: formData.get(
+          `creators[${i}].nameIdentifierScheme`
+        ) as string,
+        schemeURI: formData.get(`creators[${i}].schemeURI`) as string,
+        affiliation: formData.get(`creators[${i}].affiliation`) as string,
+        lang: formData.get(`creators[${i}].lang`) as string,
+      })),
+      publisher: {
+        name: formData.get("publisher.name") as string,
+        lang: formData.get("publisher.lang") as string,
+      },
+      publicationYear: formData.get("publicationYear") as string,
+      resourceType: {
+        type: formData.get("resourceType.type") as string,
+        general: formData.get("resourceType.general") as string,
+      },
+    };
+  };
+
+  const validateAndSave = (action: "next" | "preview") => {
+    try {
+      const formData = parseFormData();
+      const result = MandatoryFieldsSchema.safeParse(formData);
+
+      if (!result.success) {
+        const newErrors: Record<string, string[]> = {};
+        result.error.issues.forEach((issue) => {
+          const path = issue.path.join(".");
+          newErrors[path] = newErrors[path] || [];
+          newErrors[path].push(issue.message);
+        });
+        setErrors(newErrors);
+        return false;
+      }
+
+      setErrors({});
+      saveFormStep("mandatory", result.data);
+
+      if (action === "preview") {
+        setXmlOutput(generateXml({ mandatory: result.data }));
+      }
+      return true;
+    } catch (err) {
+      console.error("Validation error:", err);
+      return false;
+    }
+  };
+
+  const handleNext = () => {
+    if (validateAndSave("next")) {
+      navigate("recommended-fields");
+    }
+  };
+
+  const handlePreview = () => {
+    validateAndSave("preview");
+  };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 mx-auto px-4">
+    <div className="flex flex-col lg:flex-row gap-8 mx-auto p-4">
       <form
+        ref={formRef}
         onSubmit={(e) => e.preventDefault()}
-        className="flex-1 space-y-12 pb-20 "
+        className="flex-1 space-y-12 pb-10"
+        id="mandatory-form"
       >
         {/* Titles */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Titles</h2>
-          {titles.map((item, index) => (
-            <div key={index} className="flex flex-wrap gap-2 items-center mb-4">
-              <Input
-                className="w-full sm:w-[60%]"
-                placeholder="Title"
-                value={item.title}
-                onChange={(e) => {
-                  const newTitles = [...titles];
-                  newTitles[index].title = e.target.value;
-                  setTitles(newTitles);
-                }}
-              />
-              <Input
-                className="w-20"
-                maxLength={3}
-                placeholder="Lang"
-                value={item.lang}
-                onChange={(e) => {
-                  const newTitles = [...titles];
-                  newTitles[index].lang = e.target.value;
-                  setTitles(newTitles);
-                }}
-              />
-              <Select
-                value={item.titleType}
-                onValueChange={(value) => {
-                  const newTitles = [...titles];
-                  newTitles[index].titleType = value;
-                  setTitles(newTitles);
-                }}
+          {Array.from({ length: titleCount }).map((_, index) => {
+            const savedTitle = saved.titles?.[index] || {};
+            return (
+              <div
+                key={index}
+                className="flex flex-wrap gap-2 items-center mb-4"
               >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Title Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {titleTypeOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveTitle(index)}
+                <div className="w-full sm:w-[60%]">
+                  <Input
+                    name={`titles[${index}].title`}
+                    placeholder="Title"
+                    defaultValue={savedTitle.title}
+                  />
+                  {getError(`titles.${index}.title`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getError(`titles.${index}.title`)}
+                    </p>
+                  )}
+                </div>
+
+                <Input
+                  className="w-20"
+                  maxLength={3}
+                  placeholder="Lang"
+                  name={`titles[${index}].lang`}
+                  defaultValue={savedTitle.lang}
+                />
+
+                <Select
+                  name={`titles[${index}].titleType`}
+                  defaultValue={savedTitle.titleType}
                 >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Title Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {titleTypeOptions.map((opt) => (
+                      <SelectItem key={opt} value={opt}>
+                        {opt}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveTitle(index)}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
           <Button variant="secondary" onClick={handleAddTitle}>
             <PlusIcon className="mr-2 h-4 w-4" /> Add Title
           </Button>
@@ -188,129 +237,112 @@ export default function MandatoryFields() {
         {/* Creators */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Creators</h2>
-          {creators.map((creator, index) => (
-            <div key={index} className="border rounded-lg p-4 mb-4 space-y-3">
-              <Input
-                placeholder="Creator Name"
-                value={creator.name}
-                onChange={(e) => {
-                  const next = [...creators];
-                  next[index].name = e.target.value;
-                  setCreators(next);
-                }}
-              />
-              <Select
-                value={creator.nameType}
-                onValueChange={(value) => {
-                  const next = [...creators];
-                  next[index].nameType = value;
-                  setCreators(next);
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Name Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {nameTypeOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder="Given Name (optional)"
-                value={creator.givenName}
-                onChange={(e) => {
-                  const next = [...creators];
-                  next[index].givenName = e.target.value;
-                  setCreators(next);
-                }}
-              />
-              <Input
-                placeholder="Family Name (optional)"
-                value={creator.familyName}
-                onChange={(e) => {
-                  const next = [...creators];
-                  next[index].familyName = e.target.value;
-                  setCreators(next);
-                }}
-              />
-              <div className="flex flex-wrap gap-2 items-center">
-                <Input
-                  placeholder="Name Identifier"
-                  value={creator.nameIdentifier}
-                  className="flex-1"
-                  onChange={(e) => {
-                    const next = [...creators];
-                    next[index].nameIdentifier = e.target.value;
-                    setCreators(next);
-                  }}
-                />
+          {Array.from({ length: creatorCount }).map((_, index) => {
+            const savedCreator = saved.creators?.[index] || {};
+            return (
+              <div key={index} className="border rounded-lg p-4 mb-4 space-y-3">
+                <div>
+                  <Input
+                    name={`creators[${index}].name`}
+                    placeholder="Creator Name"
+                    defaultValue={savedCreator.name}
+                  />
+                  {getError(`creators.${index}.name`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getError(`creators.${index}.name`)}
+                    </p>
+                  )}
+                </div>
+
                 <Select
-                  value={creator.nameIdentifierScheme}
-                  onValueChange={(value) => {
-                    const next = [...creators];
-                    next[index].nameIdentifierScheme = value;
-                    setCreators(next);
-                  }}
+                  name={`creators[${index}].nameType`}
+                  defaultValue={savedCreator.nameType}
                 >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Identifier Scheme" />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Name Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {nameIdentifierSchemeOptions.map((opt) => (
+                    {nameTypeOptions.map((opt) => (
                       <SelectItem key={opt} value={opt}>
                         {opt}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+
                 <Input
-                  className="flex-1"
-                  placeholder="Scheme URI"
-                  value={creator.schemeURI}
-                  onChange={(e) => {
-                    const next = [...creators];
-                    next[index].schemeURI = e.target.value;
-                    setCreators(next);
-                  }}
+                  name={`creators[${index}].givenName`}
+                  placeholder="Given Name (optional)"
+                  defaultValue={savedCreator.givenName}
                 />
+
+                <Input
+                  name={`creators[${index}].familyName`}
+                  placeholder="Family Name (optional)"
+                  defaultValue={savedCreator.familyName}
+                />
+
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Input
+                    name={`creators[${index}].nameIdentifier`}
+                    placeholder="Name Identifier"
+                    className="flex-1"
+                    defaultValue={savedCreator.nameIdentifier}
+                  />
+
+                  <Select
+                    name={`creators[${index}].nameIdentifierScheme`}
+                    defaultValue={savedCreator.nameIdentifierScheme}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Identifier Scheme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nameIdentifierSchemeOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    className="flex-1"
+                    placeholder="Scheme URI"
+                    name={`creators[${index}].schemeURI`}
+                    defaultValue={savedCreator.schemeURI}
+                  />
+                </div>
+
+                <div className="flex gap-2 items-center">
+                  <Input
+                    className="flex-1"
+                    placeholder="Affiliation"
+                    name={`creators[${index}].affiliation`}
+                    defaultValue={savedCreator.affiliation}
+                  />
+
+                  <Input
+                    className="w-20"
+                    maxLength={3}
+                    placeholder="Lang"
+                    name={`creators[${index}].lang`}
+                    defaultValue={savedCreator.lang}
+                  />
+                </div>
+
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveCreator(index)}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-              <div className="flex gap-2 items-center">
-                <Input
-                  className="flex-1"
-                  placeholder="Affiliation"
-                  value={creator.affiliation}
-                  onChange={(e) => {
-                    const next = [...creators];
-                    next[index].affiliation = e.target.value;
-                    setCreators(next);
-                  }}
-                />
-                <Input
-                  className="w-20"
-                  maxLength={3}
-                  placeholder="Lang"
-                  value={creator.lang}
-                  onChange={(e) => {
-                    const next = [...creators];
-                    next[index].lang = e.target.value;
-                    setCreators(next);
-                  }}
-                />
-              </div>
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveCreator(index)}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
+            );
+          })}
           <Button variant="secondary" onClick={handleAddCreator}>
             <PlusIcon className="mr-2 h-4 w-4" /> Add Creator
           </Button>
@@ -320,22 +352,25 @@ export default function MandatoryFields() {
         <section>
           <h2 className="text-xl font-semibold mb-4">Publisher</h2>
           <div className="flex flex-wrap gap-2">
-            <Input
-              className="flex-1"
-              placeholder="Publisher Name"
-              value={publisher.name}
-              onChange={(e) =>
-                setPublisher((prev) => ({ ...prev, name: e.target.value }))
-              }
-            />
+            <div className="flex-1">
+              <Input
+                name="publisher.name"
+                placeholder="Publisher Name"
+                defaultValue={saved.publisher?.name}
+              />
+              {getError("publisher.name") && (
+                <p className="text-red-500 text-xs mt-1">
+                  {getError("publisher.name")}
+                </p>
+              )}
+            </div>
+
             <Input
               className="w-20"
               maxLength={3}
               placeholder="Lang"
-              value={publisher.lang}
-              onChange={(e) =>
-                setPublisher((prev) => ({ ...prev, lang: e.target.value }))
-              }
+              name="publisher.lang"
+              defaultValue={saved.publisher?.lang}
             />
           </div>
         </section>
@@ -343,60 +378,84 @@ export default function MandatoryFields() {
         {/* Publication Year */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Publication Year</h2>
-          <Input
-            className="w-[200px]"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]{4}"
-            placeholder="YYYY"
-            value={publicationYear}
-            onChange={(e) => setPublicationYear(e.target.value)}
-          />
+          <div>
+            <Input
+              className="w-[200px]"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]{4}"
+              placeholder="YYYY"
+              name="publicationYear"
+              defaultValue={saved.publicationYear}
+            />
+            {getError("publicationYear") && (
+              <p className="text-red-500 text-xs mt-1">
+                {getError("publicationYear")}
+              </p>
+            )}
+          </div>
         </section>
 
         {/* Resource Type */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Resource Type</h2>
           <div className="flex flex-wrap gap-2">
-            <Input
-              className="flex-1"
-              placeholder="Resource Type (free text)"
-              value={resourceType.type}
-              onChange={(e) =>
-                setResourceType((prev) => ({ ...prev, type: e.target.value }))
-              }
-            />
-            <Select
-              value={resourceType.general}
-              onValueChange={(value) =>
-                setResourceType((prev) => ({ ...prev, general: value }))
-              }
-            >
-              <SelectTrigger className="w-[250px]">
-                <SelectValue placeholder="Resource Type General" />
-              </SelectTrigger>
-              <SelectContent>
-                {resourceTypeGeneralOptions.map((opt) => (
-                  <SelectItem key={opt} value={opt}>
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex-1">
+              <Input
+                name="resourceType.type"
+                placeholder="Resource Type (free text)"
+                defaultValue={saved.resourceType?.type}
+              />
+              {getError("resourceType.type") && (
+                <p className="text-red-500 text-xs mt-1">
+                  {getError("resourceType.type")}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Select
+                name="resourceType.general"
+                defaultValue={saved.resourceType?.general}
+              >
+                <SelectTrigger className="w-[250px]">
+                  <SelectValue placeholder="Resource Type General" />
+                </SelectTrigger>
+                <SelectContent>
+                  {resourceTypeGeneralOptions.map((opt) => (
+                    <SelectItem key={opt} value={opt}>
+                      {opt}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {getError("resourceType.general") && (
+                <p className="text-red-500 text-xs mt-1">
+                  {getError("resourceType.general")}
+                </p>
+              )}
+            </div>
           </div>
         </section>
-        <Button onClick={handleNext} className="mt-6">
-          Next: Recommended Fields →
-        </Button>
-       { /* Mobile sheet */}
+
+        <div className="flex gap-4 mt-8">
+          <Button onClick={handleNext}>Next: Recommended Fields →</Button>
+
+          <Button variant="outline" onClick={handlePreview} type="button">
+            <CodeXml className="mr-2 h-4 w-4" />
+            Preview XML
+          </Button>
+        </div>
+
+        {/* Mobile preview sheet */}
         <div className="block lg:hidden mt-8">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline">Preview XML</Button>
+              <Button variant="outline">Show XML Preview</Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="max-h-[85vh] overflow-auto">
               <SheetHeader>
-                <SheetTitle>Live XML Preview</SheetTitle>
+                <SheetTitle>XML Preview</SheetTitle>
               </SheetHeader>
               <div className="mt-4">
                 <XmlOutput xmlOutput={xmlOutput} />
@@ -408,6 +467,13 @@ export default function MandatoryFields() {
 
       {/* XML OUTPUT */}
       <div className="hidden lg:block sticky top-0 h-fit max-h-[calc(100vh-5rem)] overflow-auto flex-1">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold mb-2">XML Preview</h2>
+          <Button variant="outline" onClick={handlePreview} className="mb-4">
+            <CodeXml className="mr-2 h-4 w-4" />
+            Generate Preview
+          </Button>
+        </div>
         <XmlOutput xmlOutput={xmlOutput} />
       </div>
     </div>

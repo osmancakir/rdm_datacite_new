@@ -1,18 +1,6 @@
-# Welcome to React Router!
+# DataCite Metadata Generator !
 
-A modern, production-ready template for building full-stack React applications using React Router.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
-
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
 
 ## Getting Started
 
@@ -78,10 +66,12 @@ Make sure to deploy the output of `npm run build`
 │   └── server/    # Server-side code
 ```
 
-## Styling
+## Features
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+- Browser localStorage for persisting data accross updates. In the future: Sqlite? 
+- Wizard form for better ux
+- Better Validation for fields
+- Documentation for the fields are included in the codebase
+- Parsing the form from and to XML and JSON
+- Light and Dark Mode support.
 
----
-
-Built with ❤️ using React Router.

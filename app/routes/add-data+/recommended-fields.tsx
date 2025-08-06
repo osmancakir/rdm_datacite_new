@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,18 +10,14 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { PlusIcon, XIcon } from "lucide-react";
+import { PlusIcon, XIcon, CodeXml } from "lucide-react";
 
 import { loadFormDraft, saveFormStep } from "@/lib/localStorage";
 import XmlOutput from "@/components/xml-output";
 import { generateXml } from "@/lib/xml";
 import {
-  type Contributor,
-  type Subject,
-  type DateEntry,
-  type RelatedIdentifier,
-  type Description,
-  type GeoLocation,
+  RecommendedFieldsSchema,
+  type RecommendedFieldsType,
 } from "@/types/fields";
 
 const subjectSchemeOptions = ["DDC", "GND", "wikidata"];
@@ -117,804 +113,828 @@ const relationTypes = [
 const descriptionTypes = ["Abstract", "Methods", "TechnicalInfo"];
 export default function RecommendedFields() {
   const saved = loadFormDraft().recommended || {};
-
-  const [subjects, setSubjects] = useState<Subject[]>(
-    saved.subjects || [
-      { subject: "", scheme: "", schemeURI: "", lang: "", valueURI: "" },
-    ]
-  );
-
-  const [contributors, setContributors] = useState<Contributor[]>(
-    saved.contributors || [
-      {
-        name: "",
-        type: "",
-        givenName: "",
-        familyName: "",
-        nameIdentifier: "",
-        nameIdentifierScheme: "",
-        schemeURI: "",
-        affiliation: "",
-        lang: "",
-      },
-    ]
-  );
-
-  const [dates, setDates] = useState<DateEntry[]>(
-    saved.dates || [
-      {
-        date: "",
-        dateType: "",
-        dateInformation: "",
-      },
-    ]
-  );
-
-  const [relatedIdentifiers, setRelatedIdentifiers] = useState<
-    RelatedIdentifier[]
-  >(
-    saved.relatedIdentifiers || [
-      {
-        relatedIdentifier: "",
-        relatedIdentifierType: "",
-        relationType: "",
-        relatedMetadataScheme: "",
-        schemeType: "",
-      },
-    ]
-  );
-
-  const [descriptions, setDescriptions] = useState<Description[]>(
-    saved.descriptions || [
-      {
-        description: "",
-        descriptionType: "",
-        lang: "",
-      },
-    ]
-  );
-
-  const [geoLocations, setGeoLocations] = useState<GeoLocation[]>(
-    saved.geoLocations || [
-      {
-        place: "",
-        point: { lat: "", long: "" },
-        box: { southLat: "", westLong: "", northLat: "", eastLong: "" },
-        polygon: [{ lat: "", long: "" }],
-      },
-    ]
-  );
-
-  const [xmlOutput, setXmlOutput] = useState("");
   const navigate = useNavigate();
+  const formRef = useRef<HTMLFormElement>(null);
+  const [xmlOutput, setXmlOutput] = useState("");
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
-  // XML generation from full draft
-  useEffect(() => {
-    const fullDraft = loadFormDraft();
-    fullDraft.recommended = {
-      ...fullDraft.recommended,
-      subjects,
-      contributors,
-      dates,
-      relatedIdentifiers,
-      descriptions,
-      geoLocations,
+  // Initialize counts with saved data
+  const [subjectCount, setSubjectCount] = useState(saved.subjects?.length || 1);
+  const [contributorCount, setContributorCount] = useState(
+    saved.contributors?.length || 1
+  );
+  const [dateCount, setDateCount] = useState(saved.dates?.length || 1);
+  const [relatedIdentifierCount, setRelatedIdentifierCount] = useState(
+    saved.relatedIdentifiers?.length || 1
+  );
+  const [descriptionCount, setDescriptionCount] = useState(
+    saved.descriptions?.length || 1
+  );
+  const [geoLocationCount, setGeoLocationCount] = useState(
+    saved.geoLocations?.length || 1
+  );
+  // Store polygon point counts for each geoLocation
+  const [polygonPointCounts, setPolygonPointCounts] = useState<number[]>(
+    saved.geoLocations?.map((geo) => geo.polygon?.length || 1) || [1]
+  );
+
+  const getError = (path: string) => errors[path]?.[0] || "";
+
+  // Handler for adding polygon points to specific geoLocation
+  const handleAddPolygonPoint = (geoIndex: number) => {
+    setPolygonPointCounts((prev) => {
+      const newCounts = [...prev];
+      newCounts[geoIndex] = (newCounts[geoIndex] || 0) + 1;
+      return newCounts;
+    });
+  };
+
+  // Handler for removing polygon points
+  const handleRemovePolygonPoint = (geoIndex: number, pointIndex: number) => {
+    setPolygonPointCounts((prev) => {
+      const newCounts = [...prev];
+      newCounts[geoIndex] = Math.max(0, newCounts[geoIndex] - 1);
+
+      // Clear errors for removed point
+      setErrors((prevErrors) => {
+        const newErrors = { ...prevErrors };
+        Object.keys(prevErrors).forEach((key) => {
+          if (
+            key.startsWith(`geoLocations.${geoIndex}.polygon.${pointIndex}`)
+          ) {
+            delete newErrors[key];
+          }
+        });
+        return newErrors;
+      });
+
+      return newCounts;
+    });
+  };
+
+  // Parse form data into structured object
+  const parseFormData = (): RecommendedFieldsType => {
+    const formData = new FormData(formRef.current!);
+
+    return {
+      subjects: Array.from({ length: subjectCount }).map((_, i) => ({
+        subject: formData.get(`subjects[${i}].subject`) as string,
+        scheme: formData.get(`subjects[${i}].scheme`) as string,
+        schemeURI: formData.get(`subjects[${i}].schemeURI`) as string,
+        lang: formData.get(`subjects[${i}].lang`) as string,
+        valueURI: formData.get(`subjects[${i}].valueURI`) as string,
+      })),
+      contributors: Array.from({ length: contributorCount }).map((_, i) => ({
+        name: formData.get(`contributors[${i}].name`) as string,
+        type: formData.get(`contributors[${i}].type`) as string,
+        givenName: formData.get(`contributors[${i}].givenName`) as string,
+        familyName: formData.get(`contributors[${i}].familyName`) as string,
+        nameIdentifier: formData.get(
+          `contributors[${i}].nameIdentifier`
+        ) as string,
+        nameIdentifierScheme: formData.get(
+          `contributors[${i}].nameIdentifierScheme`
+        ) as string,
+        schemeURI: formData.get(`contributors[${i}].schemeURI`) as string,
+        affiliation: formData.get(`contributors[${i}].affiliation`) as string,
+        lang: formData.get(`contributors[${i}].lang`) as string,
+      })),
+      dates: Array.from({ length: dateCount }).map((_, i) => ({
+        date: formData.get(`dates[${i}].date`) as string,
+        dateType: formData.get(`dates[${i}].dateType`) as string,
+        dateInformation: formData.get(`dates[${i}].dateInformation`) as string,
+      })),
+      relatedIdentifiers: Array.from({ length: relatedIdentifierCount }).map(
+        (_, i) => ({
+          relatedIdentifier: formData.get(
+            `relatedIdentifiers[${i}].relatedIdentifier`
+          ) as string,
+          relatedIdentifierType: formData.get(
+            `relatedIdentifiers[${i}].relatedIdentifierType`
+          ) as string,
+          relationType: formData.get(
+            `relatedIdentifiers[${i}].relationType`
+          ) as string,
+          relatedMetadataScheme: formData.get(
+            `relatedIdentifiers[${i}].relatedMetadataScheme`
+          ) as string,
+          schemeType: formData.get(
+            `relatedIdentifiers[${i}].schemeType`
+          ) as string,
+        })
+      ),
+      descriptions: Array.from({ length: descriptionCount }).map((_, i) => ({
+        description: formData.get(`descriptions[${i}].description`) as string,
+        descriptionType: formData.get(
+          `descriptions[${i}].descriptionType`
+        ) as string,
+        lang: formData.get(`descriptions[${i}].lang`) as string,
+      })),
+      geoLocations: Array.from({ length: geoLocationCount }).map((_, i) => {
+        const pointCount = polygonPointCounts[i] || 0;
+        return {
+          place: formData.get(`geoLocations[${i}].place`) as string,
+          point: {
+            lat: formData.get(`geoLocations[${i}].point.lat`) as string,
+            long: formData.get(`geoLocations[${i}].point.long`) as string,
+          },
+          box: {
+            southLat: formData.get(`geoLocations[${i}].box.southLat`) as string,
+            westLong: formData.get(`geoLocations[${i}].box.westLong`) as string,
+            northLat: formData.get(`geoLocations[${i}].box.northLat`) as string,
+            eastLong: formData.get(`geoLocations[${i}].box.eastLong`) as string,
+          },
+          polygon: Array.from({ length: pointCount }).map((_, j) => ({
+            lat: formData.get(`geoLocations[${i}].polygon[${j}].lat`) as string,
+            long: formData.get(
+              `geoLocations[${i}].polygon[${j}].long`
+            ) as string,
+          })),
+        };
+      }),
     };
-    setXmlOutput(generateXml(fullDraft));
-  }, [
-    subjects,
-    contributors,
-    dates,
-    relatedIdentifiers,
-    descriptions,
-    geoLocations,
-  ]);
+  };
 
-  function handleAddSubject() {
-    setSubjects([
-      ...subjects,
-      { subject: "", scheme: "", schemeURI: "", lang: "", valueURI: "" },
-    ]);
-  }
+  // Validate form and perform action
+  const validateAndSave = (action: "next" | "preview" | "back") => {
+    try {
+      const formData = parseFormData();
+      const result = RecommendedFieldsSchema.safeParse(formData);
 
-  function handleRemoveSubject(index: number) {
-    setSubjects(subjects.filter((_, i) => i !== index));
-  }
+      if (!result.success) {
+        const newErrors: Record<string, string[]> = {};
+        result.error.issues.forEach((issue) => {
+          const path = issue.path.join(".");
+          newErrors[path] = newErrors[path] || [];
+          newErrors[path].push(issue.message);
+        });
+        setErrors(newErrors);
+        return false;
+      }
 
-  function handleAddContributor() {
-    setContributors([
-      ...contributors,
-      {
-        name: "",
-        type: "",
-        givenName: "",
-        familyName: "",
-        nameIdentifier: "",
-        nameIdentifierScheme: "",
-        schemeURI: "",
-        affiliation: "",
-        lang: "",
-      },
-    ]);
-  }
+      setErrors({});
+      saveFormStep("recommended", result.data);
 
-  function handleRemoveContributor(index: number) {
-    setContributors(contributors.filter((_, i) => i !== index));
-  }
+      if (action === "preview") {
+        const fullDraft = loadFormDraft();
+        fullDraft.recommended = result.data;
+        setXmlOutput(generateXml(fullDraft));
+      }
+      return true;
+    } catch (err) {
+      console.error("Validation error:", err);
+      return false;
+    }
+  };
 
-  function handleAddDate() {
-    setDates([...dates, { date: "", dateType: "", dateInformation: "" }]);
-  }
-  function handleRemoveDate(index: number) {
-    setDates(dates.filter((_, i) => i !== index));
-  }
+  const handleNext = () => {
+    if (validateAndSave("next")) {
+      navigate("/other-fields");
+    }
+  };
 
-  function handleAddRelatedIdentifier() {
-    setRelatedIdentifiers([
-      ...relatedIdentifiers,
-      {
-        relatedIdentifier: "",
-        relatedIdentifierType: "",
-        relationType: "",
-        relatedMetadataScheme: "",
-        schemeType: "",
-      },
-    ]);
-  }
+  const handleBack = () => {
+    if (validateAndSave("back")) {
+      navigate("/add-data");
+    }
+  };
 
-  function handleRemoveRelatedIdentifier(index: number) {
-    setRelatedIdentifiers(relatedIdentifiers.filter((_, i) => i !== index));
-  }
-
-  function handleAddDescription() {
-    setDescriptions([
-      ...descriptions,
-      {
-        description: "",
-        descriptionType: "",
-        lang: "",
-      },
-    ]);
-  }
-
-  function handleRemoveDescription(index: number) {
-    setDescriptions(descriptions.filter((_, i) => i !== index));
-  }
-
-  function handleAddGeoLocations() {
-    setGeoLocations([
-      ...geoLocations,
-      {
-        place: "",
-        point: { lat: "", long: "" },
-        box: { southLat: "", westLong: "", northLat: "", eastLong: "" },
-      },
-    ]);
-  }
-
-  function handleRemoveGeoLocations(index: number) {
-    setGeoLocations(geoLocations.filter((_, i) => i !== index));
-  }
-
-  function handleNext() {
-    saveFormStep("recommended", { subjects });
-    navigate("/other-fields");
-  }
-
-  function handleBack() {
-    saveFormStep("recommended", { subjects });
-    navigate("/add-data");
-  }
+  const handlePreview = () => {
+    validateAndSave("preview");
+  };
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 max-w-screen-xl mx-auto px-4 py-8">
       <form
+        ref={formRef}
         onSubmit={(e) => e.preventDefault()}
-        className=" flex-1 space-y-12 pb-20"
+        className="flex-1 space-y-12 pb-20"
       >
         {/* Subjects */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Subjects</h2>
-          {subjects.map((s, index) => (
-            <div
-              key={index}
-              className="border rounded-lg p-4 mb-4 space-y-2 relative"
-            >
-              <Input
-                placeholder="Subject"
-                value={s.subject}
-                onChange={(e) => {
-                  const next = [...subjects];
-                  next[index].subject = e.target.value;
-                  setSubjects(next);
-                }}
-              />
-              <div className="flex flex-wrap gap-2">
+          {Array.from({ length: subjectCount }).map((_, index) => {
+            const savedSubject = saved.subjects?.[index] || {};
+            return (
+              <div
+                key={index}
+                className="border rounded-lg p-4 mb-4 space-y-2 relative"
+              >
+                <div>
+                  <Input
+                    name={`subjects[${index}].subject`}
+                    placeholder="Subject"
+                    defaultValue={savedSubject.subject}
+                  />
+                  {getError(`subjects.${index}.subject`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getError(`subjects.${index}.subject`)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    name={`subjects[${index}].scheme`}
+                    defaultValue={savedSubject.scheme}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Subject Scheme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjectSchemeOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    placeholder="Scheme URI"
+                    name={`subjects[${index}].schemeURI`}
+                    defaultValue={savedSubject.schemeURI}
+                  />
+
+                  <Input
+                    placeholder="Value URI"
+                    name={`subjects[${index}].valueURI`}
+                    defaultValue={savedSubject.valueURI}
+                  />
+
+                  <Input
+                    placeholder="Lang"
+                    maxLength={3}
+                    className="w-[80px]"
+                    name={`subjects[${index}].lang`}
+                    defaultValue={savedSubject.lang}
+                  />
+                </div>
+
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSubjectCount((prev) => prev - 1);
+                      // Clear errors for removed subject
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        Object.keys(prev).forEach((key) => {
+                          if (key.startsWith(`subjects.${index}`)) {
+                            delete newErrors[key];
+                          }
+                        });
+                        return newErrors;
+                      });
+                    }}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+
+          <Button
+            variant="secondary"
+            onClick={() => setSubjectCount((prev) => prev + 1)}
+          >
+            <PlusIcon className="mr-2 w-4 h-4" /> Add Subject
+          </Button>
+        </section>
+
+        {/* Contributors */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Contributors</h2>
+          {Array.from({ length: contributorCount }).map((_, index) => {
+            const savedContributor = saved.contributors?.[index] || {};
+            return (
+              <div
+                key={index}
+                className="border rounded-lg p-4 mb-4 space-y-2 relative"
+              >
+                <div>
+                  <Input
+                    name={`contributors[${index}].name`}
+                    placeholder="Full Name"
+                    defaultValue={savedContributor.name}
+                  />
+                  {getError(`contributors.${index}.name`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getError(`contributors.${index}.name`)}
+                    </p>
+                  )}
+                </div>
+
                 <Select
-                  value={s.scheme}
-                  onValueChange={(value) => {
-                    const next = [...subjects];
-                    next[index].scheme = value;
-                    setSubjects(next);
-                  }}
+                  name={`contributors[${index}].type`}
+                  defaultValue={savedContributor.type}
                 >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Subject Scheme" />
+                  <SelectTrigger className="w-[240px]">
+                    <SelectValue placeholder="Contributor Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjectSchemeOptions.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
+                    {contributorTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  placeholder="Scheme URI"
-                  value={s.schemeURI}
-                  onChange={(e) => {
-                    const next = [...subjects];
-                    next[index].schemeURI = e.target.value;
-                    setSubjects(next);
-                  }}
-                />
-                <Input
-                  placeholder="Value URI"
-                  value={s.valueURI}
-                  onChange={(e) => {
-                    const next = [...subjects];
-                    next[index].valueURI = e.target.value;
-                    setSubjects(next);
-                  }}
-                />
-                <Input
-                  placeholder="Lang"
-                  maxLength={3}
-                  className="w-[80px]"
-                  value={s.lang}
-                  onChange={(e) => {
-                    const next = [...subjects];
-                    next[index].lang = e.target.value;
-                    setSubjects(next);
-                  }}
-                />
-              </div>
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveSubject(index)}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button variant="secondary" onClick={handleAddSubject}>
-            <PlusIcon className="mr-2 w-4 h-4" /> Add Subject
-          </Button>
-        </section>
-        {/* Contributors */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Contributors</h2>
-          {contributors.map((c, index) => (
-            <div
-              key={index}
-              className="border rounded-lg p-4 mb-4 space-y-2 relative"
-            >
-              <Input
-                placeholder="Full Name"
-                value={c.name}
-                onChange={(e) => {
-                  const next = [...contributors];
-                  next[index].name = e.target.value;
-                  setContributors(next);
-                }}
-              />
-              <Select
-                value={c.type}
-                onValueChange={(value) => {
-                  const next = [...contributors];
-                  next[index].type = value;
-                  setContributors(next);
-                }}
-              >
-                <SelectTrigger className="w-[240px]">
-                  <SelectValue placeholder="Contributor Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contributorTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
 
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  placeholder="Given Name"
-                  value={c.givenName}
-                  onChange={(e) => {
-                    const next = [...contributors];
-                    next[index].givenName = e.target.value;
-                    setContributors(next);
-                  }}
-                />
-                <Input
-                  placeholder="Family Name"
-                  value={c.familyName}
-                  onChange={(e) => {
-                    const next = [...contributors];
-                    next[index].familyName = e.target.value;
-                    setContributors(next);
-                  }}
-                />
-                <Input
-                  placeholder="Affiliation"
-                  value={c.affiliation}
-                  onChange={(e) => {
-                    const next = [...contributors];
-                    next[index].affiliation = e.target.value;
-                    setContributors(next);
-                  }}
-                />
-                <Input
-                  placeholder="Lang"
-                  maxLength={3}
-                  value={c.lang}
-                  onChange={(e) => {
-                    const next = [...contributors];
-                    next[index].lang = e.target.value;
-                    setContributors(next);
-                  }}
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Given Name"
+                    name={`contributors[${index}].givenName`}
+                    defaultValue={savedContributor.givenName}
+                  />
+                  <Input
+                    placeholder="Family Name"
+                    name={`contributors[${index}].familyName`}
+                    defaultValue={savedContributor.familyName}
+                  />
+                  <Input
+                    placeholder="Affiliation"
+                    name={`contributors[${index}].affiliation`}
+                    defaultValue={savedContributor.affiliation}
+                  />
+                  <Input
+                    placeholder="Lang"
+                    maxLength={3}
+                    name={`contributors[${index}].lang`}
+                    defaultValue={savedContributor.lang}
+                  />
+                </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <Input
-                  placeholder="Name Identifier"
-                  value={c.nameIdentifier}
-                  onChange={(e) => {
-                    const next = [...contributors];
-                    next[index].nameIdentifier = e.target.value;
-                    setContributors(next);
-                  }}
-                />
-                <Input
-                  placeholder="Identifier Scheme"
-                  value={c.nameIdentifierScheme}
-                  onChange={(e) => {
-                    const next = [...contributors];
-                    next[index].nameIdentifierScheme = e.target.value;
-                    setContributors(next);
-                  }}
-                />
-                <Input
-                  placeholder="Scheme URI"
-                  value={c.schemeURI}
-                  onChange={(e) => {
-                    const next = [...contributors];
-                    next[index].schemeURI = e.target.value;
-                    setContributors(next);
-                  }}
-                />
-              </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input
+                    placeholder="Name Identifier"
+                    name={`contributors[${index}].nameIdentifier`}
+                    defaultValue={savedContributor.nameIdentifier}
+                  />
+                  <Input
+                    placeholder="Identifier Scheme"
+                    name={`contributors[${index}].nameIdentifierScheme`}
+                    defaultValue={savedContributor.nameIdentifierScheme}
+                  />
+                  <Input
+                    placeholder="Scheme URI"
+                    name={`contributors[${index}].schemeURI`}
+                    defaultValue={savedContributor.schemeURI}
+                  />
+                </div>
 
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveContributor(index)}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button variant="secondary" onClick={handleAddContributor}>
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setContributorCount((prev) => prev - 1);
+                      // Clear errors for removed contributor
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        Object.keys(prev).forEach((key) => {
+                          if (key.startsWith(`contributors.${index}`)) {
+                            delete newErrors[key];
+                          }
+                        });
+                        return newErrors;
+                      });
+                    }}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+
+          <Button
+            variant="secondary"
+            onClick={() => setContributorCount((prev) => prev + 1)}
+          >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Contributor
           </Button>
         </section>
+
         {/* Dates */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Dates</h2>
-          {dates.map((d, index) => (
-            <div
-              key={index}
-              className="border rounded-lg p-4 mb-4 space-y-2 relative"
-            >
-              <Input
-                type="date"
-                placeholder="Date"
-                value={d.date}
-                onChange={(e) => {
-                  const next = [...dates];
-                  next[index].date = e.target.value;
-                  setDates(next);
-                }}
-              />
-              <Select
-                value={d.dateType}
-                onValueChange={(value) => {
-                  const next = [...dates];
-                  next[index].dateType = value;
-                  setDates(next);
-                }}
+          {Array.from({ length: dateCount }).map((_, index) => {
+            const savedDate = saved.dates?.[index] || {};
+            return (
+              <div
+                key={index}
+                className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
-                <SelectTrigger className="w-[240px]">
-                  <SelectValue placeholder="Date Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {dateTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <div>
+                  <Input
+                    type="date"
+                    placeholder="Date"
+                    name={`dates[${index}].date`}
+                    defaultValue={savedDate.date}
+                  />
+                  {getError(`dates.${index}.date`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getError(`dates.${index}.date`)}
+                    </p>
+                  )}
+                </div>
 
-              <Input
-                placeholder="Optional: Date Information"
-                value={d.dateInformation}
-                onChange={(e) => {
-                  const next = [...dates];
-                  next[index].dateInformation = e.target.value;
-                  setDates(next);
-                }}
-              />
-
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveDate(index)}
+                <Select
+                  name={`dates[${index}].dateType`}
+                  defaultValue={savedDate.dateType}
                 >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button variant="secondary" onClick={handleAddDate}>
+                  <SelectTrigger className="w-[240px]">
+                    <SelectValue placeholder="Date Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dateTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Input
+                  placeholder="Optional: Date Information"
+                  name={`dates[${index}].dateInformation`}
+                  defaultValue={savedDate.dateInformation}
+                />
+
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setDateCount((prev) => prev - 1);
+                      // Clear errors for removed date
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        Object.keys(prev).forEach((key) => {
+                          if (key.startsWith(`dates.${index}`)) {
+                            delete newErrors[key];
+                          }
+                        });
+                        return newErrors;
+                      });
+                    }}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+
+          <Button
+            variant="secondary"
+            onClick={() => setDateCount((prev) => prev + 1)}
+          >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Date
           </Button>
         </section>
 
         {/* Related Identifiers */}
-
         <section>
           <h2 className="text-xl font-semibold mb-4">Related Identifiers</h2>
-          {relatedIdentifiers.map((r, index) => (
-            <div
-              key={index}
-              className="border rounded-lg p-4 mb-4 space-y-2 relative"
-            >
-              <Input
-                placeholder="Related Identifier (e.g., DOI, ISBN)"
-                value={r.relatedIdentifier}
-                onChange={(e) => {
-                  const next = [...relatedIdentifiers];
-                  next[index].relatedIdentifier = e.target.value;
-                  setRelatedIdentifiers(next);
-                }}
-              />
+          {Array.from({ length: relatedIdentifierCount }).map((_, index) => {
+            const savedIdentifier = saved.relatedIdentifiers?.[index] || {};
+            return (
+              <div
+                key={index}
+                className="border rounded-lg p-4 mb-4 space-y-2 relative"
+              >
+                <div>
+                  <Input
+                    placeholder="Related Identifier (e.g., DOI, ISBN)"
+                    name={`relatedIdentifiers[${index}].relatedIdentifier`}
+                    defaultValue={savedIdentifier.relatedIdentifier}
+                  />
+                  {getError(
+                    `relatedIdentifiers.${index}.relatedIdentifier`
+                  ) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getError(
+                        `relatedIdentifiers.${index}.relatedIdentifier`
+                      )}
+                    </p>
+                  )}
+                </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Select
-                  value={r.relatedIdentifierType}
-                  onValueChange={(value) => {
-                    const next = [...relatedIdentifiers];
-                    next[index].relatedIdentifierType = value;
-                    setRelatedIdentifiers(next);
-                  }}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Identifier Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {relatedIdentifiersTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    name={`relatedIdentifiers[${index}].relatedIdentifierType`}
+                    defaultValue={savedIdentifier.relatedIdentifierType}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Identifier Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {relatedIdentifiersTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                <Select
-                  value={r.relationType}
-                  onValueChange={(value) => {
-                    const next = [...relatedIdentifiers];
-                    next[index].relationType = value;
-                    setRelatedIdentifiers(next);
-                  }}
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Relation Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {relationTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  <Select
+                    name={`relatedIdentifiers[${index}].relationType`}
+                    defaultValue={savedIdentifier.relationType}
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Relation Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {relationTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Input
+                  placeholder="Optional: Related Metadata Scheme"
+                  name={`relatedIdentifiers[${index}].relatedMetadataScheme`}
+                  defaultValue={savedIdentifier.relatedMetadataScheme}
+                />
+
+                <Input
+                  placeholder="Optional: Scheme Type (e.g. XSD)"
+                  name={`relatedIdentifiers[${index}].schemeType`}
+                  defaultValue={savedIdentifier.schemeType}
+                />
+
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setRelatedIdentifierCount((prev) => prev - 1);
+                      // Clear errors for removed identifier
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        Object.keys(prev).forEach((key) => {
+                          if (key.startsWith(`relatedIdentifiers.${index}`)) {
+                            delete newErrors[key];
+                          }
+                        });
+                        return newErrors;
+                      });
+                    }}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
+            );
+          })}
 
-              <Input
-                placeholder="Optional: Related Metadata Scheme"
-                value={r.relatedMetadataScheme}
-                onChange={(e) => {
-                  const next = [...relatedIdentifiers];
-                  next[index].relatedMetadataScheme = e.target.value;
-                  setRelatedIdentifiers(next);
-                }}
-              />
-
-              <Input
-                placeholder="Optional: Scheme Type (e.g. XSD)"
-                value={r.schemeType}
-                onChange={(e) => {
-                  const next = [...relatedIdentifiers];
-                  next[index].schemeType = e.target.value;
-                  setRelatedIdentifiers(next);
-                }}
-              />
-
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveRelatedIdentifier(index)}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-
-          <Button variant="secondary" onClick={handleAddRelatedIdentifier}>
+          <Button
+            variant="secondary"
+            onClick={() => setRelatedIdentifierCount((prev) => prev + 1)}
+          >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Related Identifier
           </Button>
         </section>
 
         {/* Descriptions */}
-
         <section>
           <h2 className="text-xl font-semibold mb-4">Descriptions</h2>
-          {descriptions.map((d, index) => (
-            <div
-              key={index}
-              className="border rounded-lg p-4 mb-4 space-y-2 relative"
-            >
-              <Textarea
-                placeholder="Description text"
-                value={d.description}
-                onChange={(e) => {
-                  const next = [...descriptions];
-                  next[index].description = e.target.value;
-                  setDescriptions(next);
-                }}
-              />
+          {Array.from({ length: descriptionCount }).map((_, index) => {
+            const savedDescription = saved.descriptions?.[index] || {};
+            return (
+              <div
+                key={index}
+                className="border rounded-lg p-4 mb-4 space-y-2 relative"
+              >
+                <div>
+                  <Textarea
+                    placeholder="Description text"
+                    name={`descriptions[${index}].description`}
+                    defaultValue={savedDescription.description}
+                  />
+                  {getError(`descriptions.${index}.description`) && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {getError(`descriptions.${index}.description`)}
+                    </p>
+                  )}
+                </div>
 
-              <div className="flex flex-wrap gap-4">
-                <Select
-                  value={d.descriptionType}
-                  onValueChange={(value) => {
-                    const next = [...descriptions];
-                    next[index].descriptionType = value;
-                    setDescriptions(next);
-                  }}
-                >
-                  <SelectTrigger className="w-[220px]">
-                    <SelectValue placeholder="Description Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {descriptionTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-4">
+                  <Select
+                    name={`descriptions[${index}].descriptionType`}
+                    defaultValue={savedDescription.descriptionType}
+                  >
+                    <SelectTrigger className="w-[220px]">
+                      <SelectValue placeholder="Description Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {descriptionTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                <Input
-                  className="w-[140px]"
-                  placeholder="Lang (e.g. en)"
-                  value={d.lang}
-                  maxLength={3}
-                  onChange={(e) => {
-                    const next = [...descriptions];
-                    next[index].lang = e.target.value;
-                    setDescriptions(next);
-                  }}
-                />
+                  <Input
+                    className="w-[140px]"
+                    placeholder="Lang (e.g. en)"
+                    name={`descriptions[${index}].lang`}
+                    defaultValue={savedDescription.lang}
+                    maxLength={3}
+                  />
+                </div>
+
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setDescriptionCount((prev) => prev - 1);
+                      // Clear errors for removed description
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        Object.keys(prev).forEach((key) => {
+                          if (key.startsWith(`descriptions.${index}`)) {
+                            delete newErrors[key];
+                          }
+                        });
+                        return newErrors;
+                      });
+                    }}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
+            );
+          })}
 
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveDescription(index)}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-
-          <Button variant="secondary" onClick={handleAddDescription}>
+          <Button
+            variant="secondary"
+            onClick={() => setDescriptionCount((prev) => prev + 1)}
+          >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Description
           </Button>
         </section>
 
-        {/* Geo Location Ui */}
-
+        {/* Geo Locations */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Geo Locations</h2>
-          {geoLocations.map((g, index) => (
-            <div
-              key={index}
-              className="border rounded-lg p-4 mb-4 space-y-4 relative"
-            >
-              {/* Place */}
-              <Input
-                placeholder="GeoLocation Place (e.g. Munich, Germany)"
-                value={g.place}
-                onChange={(e) => {
-                  const next = [...geoLocations];
-                  next[index].place = e.target.value;
-                  setGeoLocations(next);
-                }}
-              />
+          {Array.from({ length: geoLocationCount }).map((_, index) => {
+            const savedGeo = saved.geoLocations?.[index] || {};
+            const pointCount = polygonPointCounts[index] || 1;
 
-              {/* Point */}
-              <div className="grid grid-cols-2 gap-2">
+            return (
+              <div
+                key={index}
+                className="border rounded-lg p-4 mb-4 space-y-4 relative"
+              >
+                {/* Place */}
                 <Input
-                  placeholder="Latitude (Point)"
-                  type="number"
-                  value={g.point?.lat ?? ""}
-                  onChange={(e) => {
-                    const next = [...geoLocations];
-                    next[index].point.lat = e.target.value;
-                    setGeoLocations(next);
-                  }}
+                  placeholder="GeoLocation Place (e.g. Munich, Germany)"
+                  name={`geoLocations[${index}].place`}
+                  defaultValue={savedGeo.place}
                 />
-                <Input
-                  placeholder="Longitude (Point)"
-                  type="number"
-                  value={g.point?.long ?? ""}
-                  onChange={(e) => {
-                    const next = [...geoLocations];
-                    next[index].point.long = e.target.value;
-                    setGeoLocations(next);
-                  }}
-                />
-              </div>
 
-              {/* Box */}
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  placeholder="South Latitude (Box)"
-                  type="number"
-                  value={g.box?.southLat ?? ""}
-                  onChange={(e) => {
-                    const next = [...geoLocations];
-                    next[index].box.southLat = e.target.value;
-                    setGeoLocations(next);
-                  }}
-                />
-                <Input
-                  placeholder="West Longitude (Box)"
-                  type="number"
-                  value={g.box?.westLong ?? ""}
-                  onChange={(e) => {
-                    const next = [...geoLocations];
-                    next[index].box.westLong = e.target.value;
-                    setGeoLocations(next);
-                  }}
-                />
-                <Input
-                  placeholder="North Latitude (Box)"
-                  type="number"
-                  value={g.box?.northLat ?? ""}
-                  onChange={(e) => {
-                    const next = [...geoLocations];
-                    next[index].box.northLat = e.target.value;
-                    setGeoLocations(next);
-                  }}
-                />
-                <Input
-                  placeholder="East Longitude (Box)"
-                  type="number"
-                  value={g.box?.eastLong ?? ""}
-                  onChange={(e) => {
-                    const next = [...geoLocations];
-                    next[index].box.eastLong = e.target.value;
-                    setGeoLocations(next);
-                  }}
-                />
-              </div>
-              {/* Polygon */}
-              <div className="space-y-2">
-                <p className="font-medium">Polygon Points</p>
-                {g.polygon?.map((pt, pIndex) => (
-                  <div
-                    key={pIndex}
-                    className="grid grid-cols-2 gap-2 items-center"
+                {/* Point */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Latitude (Point)"
+                    type="number"
+                    name={`geoLocations[${index}].point.lat`}
+                    defaultValue={savedGeo.point?.lat}
+                  />
+                  <Input
+                    placeholder="Longitude (Point)"
+                    type="number"
+                    name={`geoLocations[${index}].point.long`}
+                    defaultValue={savedGeo.point?.long}
+                  />
+                </div>
+
+                {/* Box */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="South Latitude (Box)"
+                    type="number"
+                    name={`geoLocations[${index}].box.southLat`}
+                    defaultValue={savedGeo.box?.southLat}
+                  />
+                  <Input
+                    placeholder="West Longitude (Box)"
+                    type="number"
+                    name={`geoLocations[${index}].box.westLong`}
+                    defaultValue={savedGeo.box?.westLong}
+                  />
+                  <Input
+                    placeholder="North Latitude (Box)"
+                    type="number"
+                    name={`geoLocations[${index}].box.northLat`}
+                    defaultValue={savedGeo.box?.northLat}
+                  />
+                  <Input
+                    placeholder="East Longitude (Box)"
+                    type="number"
+                    name={`geoLocations[${index}].box.eastLong`}
+                    defaultValue={savedGeo.box?.eastLong}
+                  />
+                </div>
+
+                {/* Polygon */}
+                <div className="space-y-2">
+                  <p className="font-medium">Polygon Points</p>
+                  {Array.from({ length: pointCount }).map((_, pIndex) => (
+                    <div
+                      key={pIndex}
+                      className="grid grid-cols-2 gap-2 items-center"
+                    >
+                      <Input
+                        placeholder="Latitude"
+                        type="number"
+                        name={`geoLocations[${index}].polygon[${pIndex}].lat`}
+                        defaultValue={savedGeo.polygon?.[pIndex]?.lat}
+                      />
+                      <Input
+                        placeholder="Longitude"
+                        type="number"
+                        name={`geoLocations[${index}].polygon[${pIndex}].long`}
+                        defaultValue={savedGeo.polygon?.[pIndex]?.long}
+                      />
+                      {pIndex > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="col-span-2 justify-self-end"
+                          onClick={() =>
+                            handleRemovePolygonPoint(index, pIndex)
+                          }
+                        >
+                          <XIcon className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAddPolygonPoint(index)}
                   >
-                    <Input
-                      placeholder="Latitude"
-                      type="number"
-                      value={pt.lat}
-                      onChange={(e) => {
-                        const next = [...geoLocations];
-                        next[index].polygon![pIndex].lat = e.target.value;
-                        setGeoLocations(next);
-                      }}
-                    />
-                    <Input
-                      placeholder="Longitude"
-                      type="number"
-                      value={pt.long}
-                      onChange={(e) => {
-                        const next = [...geoLocations];
-                        next[index].polygon![pIndex].long = e.target.value;
-                        setGeoLocations(next);
-                      }}
-                    />
-                    {pIndex > 0 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="col-span-2 justify-self-end"
-                        onClick={() => {
-                          const next = [...geoLocations];
-                          next[index].polygon = next[index].polygon!.filter(
-                            (_, i) => i !== pIndex
-                          );
-                          setGeoLocations(next);
-                        }}
-                      >
-                        <XIcon className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                    <PlusIcon className="mr-1 h-4 w-4" /> Add Polygon Point
+                  </Button>
+                </div>
 
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const next = [...geoLocations];
-                    next[index].polygon = [
-                      ...(next[index].polygon ?? []),
-                      { lat: "", long: "" },
-                    ];
-                    setGeoLocations(next);
-                  }}
-                >
-                  <PlusIcon className="mr-1 h-4 w-4" /> Add Polygon Point
-                </Button>
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setGeoLocationCount((prev) => prev - 1);
+                      // Update polygon counts
+                      setPolygonPointCounts((prev) => {
+                        const newCounts = [...prev];
+                        newCounts.splice(index, 1);
+                        return newCounts;
+                      });
+                      // Clear errors for removed geoLocation
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        Object.keys(prev).forEach((key) => {
+                          if (key.startsWith(`geoLocations.${index}`)) {
+                            delete newErrors[key];
+                          }
+                        });
+                        return newErrors;
+                      });
+                    }}
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
+            );
+          })}
 
-              {index > 0 && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveGeoLocations(index)}
-                >
-                  <XIcon className="w-4 h-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-
-          <Button variant="secondary" onClick={() => handleAddGeoLocations()}>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setGeoLocationCount((prev) => prev + 1);
+              // Add initial polygon count for new geoLocation
+              setPolygonPointCounts((prev) => [...prev, 1]);
+            }}
+          >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Geo Location
           </Button>
@@ -925,9 +945,13 @@ export default function RecommendedFields() {
             ← Back
           </Button>
           <Button onClick={handleNext}>Next: Other Elements →</Button>
+          <Button variant="outline" onClick={handlePreview} type="button">
+            <CodeXml className="mr-2 h-4 w-4" />
+            Preview XML
+          </Button>
         </div>
 
-        {/* Mobile Sheet Preview */}
+        {/* Mobile Preview */}
         <div className="block lg:hidden mt-8">
           <XmlOutput xmlOutput={xmlOutput} />
         </div>
@@ -935,6 +959,13 @@ export default function RecommendedFields() {
 
       {/* Sticky Desktop Preview */}
       <div className="hidden lg:block sticky top-0 h-fit max-h-[calc(100vh-5rem)] overflow-auto flex-1">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold mb-2">XML Preview</h2>
+          <Button variant="outline" onClick={handlePreview} className="mb-4">
+            <CodeXml className="mr-2 h-4 w-4" />
+            Generate Preview
+          </Button>
+        </div>
         <XmlOutput xmlOutput={xmlOutput} />
       </div>
     </div>
