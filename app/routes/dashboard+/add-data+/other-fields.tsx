@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import { saveFormStep, loadFormDraft } from "@/lib/localStorage";
-import { generateXml } from "@/lib/xml";
 import { PlusIcon, XIcon } from "lucide-react";
 import { OtherFieldsSchema, type OtherFieldsType } from "@/types/fields";
 import {
@@ -112,7 +111,7 @@ export default function OtherFields() {
     };
   };
 
-  const validateAndSave = (action: "preview" | "next") => {
+  const validateAndSave = () => {
     try {
       const data = parseFormData();
       const result = OtherFieldsSchema.safeParse(data);
@@ -129,11 +128,6 @@ export default function OtherFields() {
 
       setErrors({});
       saveFormStep("other", result.data);
-      if (action === "preview") {
-        const fullDraft = loadFormDraft();
-        fullDraft.other = result.data;
-        generateXml(fullDraft);
-      }
       return true;
     } catch (err) {
       console.error("Validation error", err);
@@ -141,17 +135,17 @@ export default function OtherFields() {
     }
   };
 
-  const handleBack = () => {
+  const handleSaveAndBack = () => {
     // write proper action later for now it should save everything to the storage
     // even though the user went back
-    if (validateAndSave("preview")) {
+    if (validateAndSave()) {
       navigate("/dashboard/add-data/recommended-fields");
     }
   };
 
-  const handlePreview = () => validateAndSave("preview");
-  const handleFinish = () => {
-    if (validateAndSave("next")) navigate("/dashboard");
+
+  const handleSaveAndFinish = () => {
+    if (validateAndSave()) navigate("/dashboard");
   };
 
   return (
@@ -614,10 +608,10 @@ export default function OtherFields() {
         </section>
 
         <div className="mt-8 flex gap-4">
-          <Button variant="outline" onClick={handleBack}>
+          <Button variant="outline" onClick={handleSaveAndBack}>
             ← Back
           </Button>
-          <Button onClick={handleFinish}>Save and Finish</Button>
+          <Button onClick={handleSaveAndFinish}>Save and Finish</Button>
         </div>
       </form>
     </div>

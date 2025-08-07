@@ -11,7 +11,6 @@ import {
 import { XIcon, PlusIcon} from "lucide-react";
 import { useNavigate } from "react-router";
 import { saveFormStep, loadFormDraft } from "@/lib/localStorage";
-import { generateXml } from "@/lib/xml";
 import {
   MandatoryFieldsSchema,
   type MandatoryFieldsType,
@@ -117,7 +116,7 @@ export default function MandatoryFields() {
     };
   };
 
-  const validateAndSave = (action: "next" | "preview") => {
+  const validateAndSave = () => {
     try {
       const formData = parseFormData();
       const result = MandatoryFieldsSchema.safeParse(formData);
@@ -132,13 +131,8 @@ export default function MandatoryFields() {
         setErrors(newErrors);
         return false;
       }
-
       setErrors({});
       saveFormStep("mandatory", result.data);
-
-      if (action === "preview") {
-        generateXml({ mandatory: result.data });
-      }
       return true;
     } catch (err) {
       console.error("Validation error:", err);
@@ -146,14 +140,14 @@ export default function MandatoryFields() {
     }
   };
 
-  const handleNext = () => {
-    if (validateAndSave("next")) {
+  const handleSaveAndNext = () => {
+    if (validateAndSave()) {
       navigate("recommended-fields");
     }
   };
 
-  const handlePreview = () => {
-    validateAndSave("preview");
+  const handleSave = () => {
+    validateAndSave();
   };
 
   return (
@@ -433,10 +427,10 @@ export default function MandatoryFields() {
         </section>
 
         <div className="flex gap-4 mt-8">
-          <Button variant="outline" onClick={handlePreview} type="button">
+          <Button variant="outline" onClick={handleSave} type="button">
             Save
           </Button>
-          <Button onClick={handleNext}>Next: Recommended Fields →</Button>
+          <Button onClick={handleSaveAndNext}>Next: Recommended Fields →</Button>
         </div>
       </form>
     </div>

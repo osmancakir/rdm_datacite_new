@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/select";
 import { PlusIcon, XIcon} from "lucide-react";
 import { loadFormDraft, saveFormStep } from "@/lib/localStorage";
-import { generateXml } from "@/lib/xml";
 import {
   RecommendedFieldsSchema,
   type RecommendedFieldsType,
@@ -254,7 +253,7 @@ export default function RecommendedFields() {
   };
 
   // Validate form and perform action
-  const validateAndSave = (action: "next" | "preview" | "back") => {
+  const validateAndSave = () => {
     try {
       const formData = parseFormData();
       const result = RecommendedFieldsSchema.safeParse(formData);
@@ -273,11 +272,6 @@ export default function RecommendedFields() {
       setErrors({});
       saveFormStep("recommended", result.data);
 
-      if (action === "preview") {
-        const fullDraft = loadFormDraft();
-        fullDraft.recommended = result.data;
-        generateXml(fullDraft);
-      }
       return true;
     } catch (err) {
       console.error("Validation error:", err);
@@ -285,20 +279,20 @@ export default function RecommendedFields() {
     }
   };
 
-  const handleNext = () => {
-    if (validateAndSave("next")) {
+  const handleSaveAndNext = () => {
+    if (validateAndSave()) {
       navigate("/dashboard/add-data/other-fields");
     }
   };
 
-  const handleBack = () => {
-    if (validateAndSave("back")) {
+  const handleSaveAndBack = () => {
+    if (validateAndSave()) {
       navigate("/dashboard/add-data");
     }
   };
 
-  const handlePreview = () => {
-    validateAndSave("preview");
+  const handleSave = () => {
+    validateAndSave();
   };
 
   return (
@@ -939,13 +933,13 @@ export default function RecommendedFields() {
         </section>
 
         <div className="flex gap-4 pt-8">
-          <Button variant="outline" onClick={handleBack}>
+          <Button variant="outline" onClick={handleSaveAndBack}>
             ← Back
           </Button>
-          <Button variant="outline" onClick={handlePreview} type="button">
+          <Button variant="outline" onClick={handleSave} type="button">
             Save
           </Button>
-          <Button onClick={handleNext}>Next: Other Elements →</Button>
+          <Button onClick={handleSaveAndNext}>Next: Other Elements →</Button>
         </div>
       </form>
     </div>
