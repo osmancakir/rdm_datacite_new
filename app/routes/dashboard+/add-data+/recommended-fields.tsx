@@ -10,10 +10,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { PlusIcon, XIcon, CodeXml } from "lucide-react";
-
+import { PlusIcon, XIcon} from "lucide-react";
 import { loadFormDraft, saveFormStep } from "@/lib/localStorage";
-import XmlOutput from "@/components/xml-output";
 import { generateXml } from "@/lib/xml";
 import {
   RecommendedFieldsSchema,
@@ -115,7 +113,6 @@ export default function RecommendedFields() {
   const saved = loadFormDraft().recommended || {};
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
-  const [xmlOutput, setXmlOutput] = useState("");
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   // Initialize counts with saved data
@@ -135,7 +132,8 @@ export default function RecommendedFields() {
   );
   // Store polygon point counts for each geoLocation
   const [polygonPointCounts, setPolygonPointCounts] = useState<number[]>(
-    saved.geoLocations?.map((geo) => geo.polygon?.length || 1) || [1]
+    // TODO: check this type
+    saved.geoLocations?.map((geo: { polygon: string | any[]; }) => geo.polygon?.length || 1) || [1]
   );
 
   const getError = (path: string) => errors[path]?.[0] || "";
@@ -278,7 +276,7 @@ export default function RecommendedFields() {
       if (action === "preview") {
         const fullDraft = loadFormDraft();
         fullDraft.recommended = result.data;
-        setXmlOutput(generateXml(fullDraft));
+        generateXml(fullDraft);
       }
       return true;
     } catch (err) {
@@ -289,13 +287,13 @@ export default function RecommendedFields() {
 
   const handleNext = () => {
     if (validateAndSave("next")) {
-      navigate("/add-data/other-fields");
+      navigate("/dashboard/add-data/other-fields");
     }
   };
 
   const handleBack = () => {
     if (validateAndSave("back")) {
-      navigate("/add-data/recommended-fields");
+      navigate("/dashboard/add-data");
     }
   };
 
@@ -304,7 +302,7 @@ export default function RecommendedFields() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 max-w-screen-xl mx-auto px-4 py-8">
+    <div className="sm:px-16">
       <form
         ref={formRef}
         onSubmit={(e) => e.preventDefault()}
@@ -376,7 +374,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setSubjectCount((prev) => prev - 1);
+                      setSubjectCount((prev:number) => prev - 1);
                       // Clear errors for removed subject
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -398,7 +396,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setSubjectCount((prev) => prev + 1)}
+            onClick={() => setSubjectCount((prev:number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" /> Add Subject
           </Button>
@@ -490,7 +488,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setContributorCount((prev) => prev - 1);
+                      setContributorCount((prev:number) => prev - 1);
                       // Clear errors for removed contributor
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -512,7 +510,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setContributorCount((prev) => prev + 1)}
+            onClick={() => setContributorCount((prev:number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Contributor
@@ -570,7 +568,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setDateCount((prev) => prev - 1);
+                      setDateCount((prev:number) => prev - 1);
                       // Clear errors for removed date
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -592,7 +590,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setDateCount((prev) => prev + 1)}
+            onClick={() => setDateCount((prev:number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Date
@@ -677,7 +675,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setRelatedIdentifierCount((prev) => prev - 1);
+                      setRelatedIdentifierCount((prev:number) => prev - 1);
                       // Clear errors for removed identifier
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -699,7 +697,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setRelatedIdentifierCount((prev) => prev + 1)}
+            onClick={() => setRelatedIdentifierCount((prev:number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Related Identifier
@@ -760,7 +758,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setDescriptionCount((prev) => prev - 1);
+                      setDescriptionCount((prev:number) => prev - 1);
                       // Clear errors for removed description
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -782,7 +780,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setDescriptionCount((prev) => prev + 1)}
+            onClick={() => setDescriptionCount((prev:number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Description
@@ -901,7 +899,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setGeoLocationCount((prev) => prev - 1);
+                      setGeoLocationCount((prev:number) => prev - 1);
                       // Update polygon counts
                       setPolygonPointCounts((prev) => {
                         const newCounts = [...prev];
@@ -930,7 +928,7 @@ export default function RecommendedFields() {
           <Button
             variant="secondary"
             onClick={() => {
-              setGeoLocationCount((prev) => prev + 1);
+              setGeoLocationCount((prev:number) => prev + 1);
               // Add initial polygon count for new geoLocation
               setPolygonPointCounts((prev) => [...prev, 1]);
             }}
@@ -944,30 +942,12 @@ export default function RecommendedFields() {
           <Button variant="outline" onClick={handleBack}>
             ← Back
           </Button>
-          <Button onClick={handleNext}>Next: Other Elements →</Button>
           <Button variant="outline" onClick={handlePreview} type="button">
-            <CodeXml className="mr-2 h-4 w-4" />
-            Preview XML
+            Save
           </Button>
-        </div>
-
-        {/* Mobile Preview */}
-        <div className="block lg:hidden mt-8">
-          <XmlOutput xmlOutput={xmlOutput} />
+          <Button onClick={handleNext}>Next: Other Elements →</Button>
         </div>
       </form>
-
-      {/* Sticky Desktop Preview */}
-      <div className="hidden lg:block sticky top-0 h-fit max-h-[calc(100vh-5rem)] overflow-auto flex-1">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">XML Preview</h2>
-          <Button variant="outline" onClick={handlePreview} className="mb-4">
-            <CodeXml className="mr-2 h-4 w-4" />
-            Generate Preview
-          </Button>
-        </div>
-        <XmlOutput xmlOutput={xmlOutput} />
-      </div>
     </div>
   );
 }

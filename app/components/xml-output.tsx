@@ -8,7 +8,7 @@ type XmlOutputProps = {
 
 export default function XmlOutput({ xmlOutput }: XmlOutputProps) {
   return (
-    <section className="mt-10">
+    <section className="p-1">
       <pre className="w-full max-w-full overflow-auto whitespace-pre-wrap break-words text-sm bg-muted p-4 rounded-md ">
         <code>{xmlOutput}</code>
       </pre>

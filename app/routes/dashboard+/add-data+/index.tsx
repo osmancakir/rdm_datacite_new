@@ -8,20 +8,14 @@ import {
   SelectValue,
   SelectItem,
 } from "@/components/ui/select";
-import { XIcon, PlusIcon, CodeXml } from "lucide-react";
+import { XIcon, PlusIcon} from "lucide-react";
 import { useNavigate } from "react-router";
 import { saveFormStep, loadFormDraft } from "@/lib/localStorage";
 import { generateXml } from "@/lib/xml";
-import XmlOutput from "@/components/xml-output";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { MandatoryFieldsSchema, type MandatoryFieldsType } from "@/types/fields";
-import HorizontalStepperNav from "@/components/horizontal-stepper";
+  MandatoryFieldsSchema,
+  type MandatoryFieldsType,
+} from "@/types/fields";
 
 const titleTypeOptions = [
   "AlternativeTitle",
@@ -48,7 +42,6 @@ export default function MandatoryFields() {
   const saved = loadFormDraft().mandatory || {};
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
-  const [xmlOutput, setXmlOutput] = useState("");
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   // Initialize with saved data or defaults
@@ -58,9 +51,9 @@ export default function MandatoryFields() {
   const [titleCount, setTitleCount] = useState(initialTitleCount);
   const [creatorCount, setCreatorCount] = useState(initialCreatorCount);
 
-  const handleAddTitle = () => setTitleCount((prev) => prev + 1);
+  const handleAddTitle = () => setTitleCount((prev:number) => prev + 1);
   const handleRemoveTitle = (index: number) => {
-    setTitleCount((prev) => prev - 1);
+    setTitleCount((prev:number) => prev - 1);
     // Clear errors for removed title
     setErrors((prev) => {
       const newErrors = { ...prev };
@@ -73,9 +66,9 @@ export default function MandatoryFields() {
     });
   };
 
-  const handleAddCreator = () => setCreatorCount((prev) => prev + 1);
+  const handleAddCreator = () => setCreatorCount((prev:number) => prev + 1);
   const handleRemoveCreator = (index: number) => {
-    setCreatorCount((prev) => prev - 1);
+    setCreatorCount((prev:number) => prev - 1);
     // Clear errors for removed creator
     setErrors((prev) => {
       const newErrors = { ...prev };
@@ -144,7 +137,7 @@ export default function MandatoryFields() {
       saveFormStep("mandatory", result.data);
 
       if (action === "preview") {
-        setXmlOutput(generateXml({ mandatory: result.data }));
+        generateXml({ mandatory: result.data });
       }
       return true;
     } catch (err) {
@@ -155,7 +148,7 @@ export default function MandatoryFields() {
 
   const handleNext = () => {
     if (validateAndSave("next")) {
-      navigate("/add-data/recommended-fields");
+      navigate("recommended-fields");
     }
   };
 
@@ -164,9 +157,7 @@ export default function MandatoryFields() {
   };
 
   return (
-    <div>
-      <HorizontalStepperNav/>
-    <div className="flex flex-col lg:flex-row gap-8 mx-auto p-4">
+    <div className="sm:px-16">
       <form
         ref={formRef}
         onSubmit={(e) => e.preventDefault()}
@@ -442,44 +433,12 @@ export default function MandatoryFields() {
         </section>
 
         <div className="flex gap-4 mt-8">
-          <Button onClick={handleNext}>Next: Recommended Fields →</Button>
-
           <Button variant="outline" onClick={handlePreview} type="button">
-            <CodeXml className="mr-2 h-4 w-4" />
-            Preview XML
+            Save
           </Button>
-        </div>
-
-        {/* Mobile preview sheet */}
-        <div className="block lg:hidden mt-8">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline">Show XML Preview</Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="max-h-[85vh] overflow-auto">
-              <SheetHeader>
-                <SheetTitle>XML Preview</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4">
-                <XmlOutput xmlOutput={xmlOutput} />
-              </div>
-            </SheetContent>
-          </Sheet>
+          <Button onClick={handleNext}>Next: Recommended Fields →</Button>
         </div>
       </form>
-
-      {/* XML OUTPUT */}
-      <div className="hidden lg:block sticky top-0 h-fit max-h-[calc(100vh-5rem)] overflow-auto flex-1">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">XML Preview</h2>
-          <Button variant="outline" onClick={handlePreview} className="mb-4">
-            <CodeXml className="mr-2 h-4 w-4" />
-            Generate Preview
-          </Button>
-        </div>
-        <XmlOutput xmlOutput={xmlOutput} />
-      </div>
-    </div>
     </div>
   );
 }

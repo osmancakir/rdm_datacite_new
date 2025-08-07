@@ -8,7 +8,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Home, Inbox, Search, Settings } from "lucide-react"
+import { Home } from "lucide-react" //, ScrollText
 import { NavLink } from "react-router"
 
 // Menu items.
@@ -18,21 +18,11 @@ const items = [
     url: "/",
     icon: Home,
   },
-  {
-    title: "Gallery",
-    url: "/gallery",
-    icon: Inbox,
-  },
-  {
-    title: "Search",
-    url: "#",
-    icon: Search,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
-  },
+  // {
+  //   title: "Best Practice Guide",
+  //   url: "/docs",
+  //   icon: ScrollText ,
+  // },
 ]
 
 export function AppSidebar() {

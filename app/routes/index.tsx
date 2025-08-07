@@ -90,7 +90,7 @@ export default function IndexPage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Button asChild size="lg">
-              <Link to="/add-data">Start Creating Metadata</Link>
+              <Link to="/dashboard">Start Creating Metadata</Link>
             </Button>
             <Button variant="outline" size="lg">
               View Best Practices Guide
