@@ -289,13 +289,13 @@ export default function RecommendedFields() {
 
   const handleNext = () => {
     if (validateAndSave("next")) {
-      navigate("/other-fields");
+      navigate("/add-data/other-fields");
     }
   };
 
   const handleBack = () => {
     if (validateAndSave("back")) {
-      navigate("/add-data");
+      navigate("/add-data/recommended-fields");
     }
   };
 

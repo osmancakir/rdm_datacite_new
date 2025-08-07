@@ -21,6 +21,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { MandatoryFieldsSchema, type MandatoryFieldsType } from "@/types/fields";
+import HorizontalStepperNav from "@/components/horizontal-stepper";
 
 const titleTypeOptions = [
   "AlternativeTitle",
@@ -154,7 +155,7 @@ export default function MandatoryFields() {
 
   const handleNext = () => {
     if (validateAndSave("next")) {
-      navigate("recommended-fields");
+      navigate("/add-data/recommended-fields");
     }
   };
 
@@ -163,6 +164,8 @@ export default function MandatoryFields() {
   };
 
   return (
+    <div>
+      <HorizontalStepperNav/>
     <div className="flex flex-col lg:flex-row gap-8 mx-auto p-4">
       <form
         ref={formRef}
@@ -476,6 +479,7 @@ export default function MandatoryFields() {
         </div>
         <XmlOutput xmlOutput={xmlOutput} />
       </div>
+    </div>
     </div>
   );
 }

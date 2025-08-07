@@ -39,7 +39,7 @@ export function generateXml(form: FormDataDraft): string {
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<resource xmlns="https://schema.datacite.org/meta/kernel-4.3/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.datacite.org/meta/kernel-4.3/ https://schema.datacite.org/meta/kernel-4.3/metadata.xsd">\n`;
 
-  // Titles
+  // MandatoryFields - Titles
   xml += "\t<titles>\n";
   for (const t of titles) {
     const attrs: Record<string, string> = {};
@@ -49,7 +49,7 @@ export function generateXml(form: FormDataDraft): string {
   }
   xml += "\t</titles>\n";
 
-  // Creators
+  // MandatoryFields - Creators
   xml += "\t<creators>\n";
   for (const c of creators) {
     xml += "\t\t<creator>\n";
@@ -72,17 +72,17 @@ export function generateXml(form: FormDataDraft): string {
   }
   xml += "\t</creators>\n";
 
-  // Publisher
+  // MandatoryFields - Publisher
   if (publisher?.name) {
     const attrs: Record<string, string> = {};
     if (publisher.lang) attrs["xml:lang"] = publisher.lang;
     xml += elAttr("publisher", publisher.name, attrs, 1);
   }
 
-  // Publication Year
+  // MandatoryFields - Publication Year
   if (publicationYear) xml += el("publicationYear", publicationYear, 1);
 
-  // Resource Type
+  // MandatoryFields - Resource Type
   if (resourceType?.type || resourceType?.general) {
     const attrs: Record<string, string> = {};
     if (resourceType.general)
@@ -236,18 +236,106 @@ export function generateXml(form: FormDataDraft): string {
     xml += "\t</geoLocations>\n";
   }
 
+// OtherFields - Language
+  if (form.other?.language) {
+    xml += el("language", form.other.language, 1);
+  }
+
+  // OtherFields - Alternate Identifiers
+  const alternateIdentifiers = form.other?.alternateIdentifiers ?? [];
+  if (alternateIdentifiers.length > 0) {
+    xml += "\t<alternateIdentifiers>\n";
+    for (const a of alternateIdentifiers) {
+      const attrs: Record<string, string> = {
+        alternateIdentifierType: a.alternateIdentifierType
+      };
+      xml += elAttr("alternateIdentifier", a.alternateIdentifier, attrs, 2);
+    }
+    xml += "\t</alternateIdentifiers>\n";
+  }
+
+  // OtherFields - Sizes
+  const sizes = form.other?.sizes ?? [];
+  if (sizes.length > 0) {
+    xml += "\t<sizes>\n";
+    for (const s of sizes) {
+      xml += el("size", s, 2);
+    }
+    xml += "\t</sizes>\n";
+  }
+
+  // OtherFields - Formats
+  const formats = form.other?.formats ?? [];
+  if (formats.length > 0) {
+    xml += "\t<formats>\n";
+    for (const f of formats) {
+      xml += el("format", f, 2);
+    }
+    xml += "\t</formats>\n";
+  }
+
+  // OtherFields - Version
+  if (form.other?.version) {
+    xml += el("version", form.other.version, 1);
+  }
+
+  // OtherFields - Rights
+  const rights = form.other?.rights ?? [];
+  if (rights.length > 0) {
+    xml += "\t<rightsList>\n";
+    for (const r of rights) {
+      const attrs: Record<string, string> = {};
+      if (r.rightsLang) attrs["xml:lang"] = r.rightsLang;
+      if (r.rightsSchemeUri) attrs["schemeURI"] = r.rightsSchemeUri;
+      if (r.rightsIdentifierScheme) attrs["rightsIdentifierScheme"] = r.rightsIdentifierScheme;
+      if (r.rightsIdentifier) attrs["rightsIdentifier"] = r.rightsIdentifier;
+      if (r.rightsUri) attrs["rightsURI"] = r.rightsUri;
+      
+      xml += elAttr("rights", r.rights, attrs, 2);
+    }
+    xml += "\t</rightsList>\n";
+  }
+
+  // OtherFields - Funding References
+  const fundingReferences = form.other?.fundingReferences ?? [];
+  if (fundingReferences.length > 0) {
+    xml += "\t<fundingReferences>\n";
+    for (const f of fundingReferences) {
+      xml += "\t\t<fundingReference>\n";
+      
+      // Funder name
+      xml += el("funderName", f.funderName, 3);
+      
+      // Funder identifier
+      if (f.funderIdentifier) {
+        const attrs: Record<string, string> = {};
+        if (f.funderIdentifierType) attrs["funderIdentifierType"] = f.funderIdentifierType;
+        xml += elAttr("funderIdentifier", f.funderIdentifier, attrs, 3);
+      }
+      
+      // Award number
+      if (f.awardNumber) {
+        // Note: The XML structure shows an awardURI attribute on awardNumber,
+        // but our form doesn't collect this. We can add it later if needed.
+        xml += el("awardNumber", f.awardNumber, 3);
+      }
+      
+      // Award title
+      if (f.awardTitle) {
+        // Note: The XML structure shows an xml:lang attribute on awardTitle,
+        // but our form doesn't collect this. We can add it later if needed.
+        xml += el("awardTitle", f.awardTitle, 3);
+      }
+      
+      xml += "\t\t</fundingReference>\n";
+    }
+    xml += "\t</fundingReferences>\n";
+  }
+
   xml += `</resource>\n`;
   return xml;
 }
 
-function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
 
 export function downloadXml(xmlOutput) {
   const blob = new Blob([xmlOutput], { type: "application/xml" });

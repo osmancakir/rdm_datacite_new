@@ -177,3 +177,41 @@ export const RecommendedFieldsSchema = z.object({
 });
 
 export type RecommendedFieldsType = z.infer<typeof RecommendedFieldsSchema>;
+
+
+
+export const AlternateIdentifierSchema = z.object({
+  alternateIdentifier: z.string().min(1, "Identifier is required"),
+  alternateIdentifierType: z.string().min(1, "Identifier type is required"),
+});
+
+export const RightsSchema = z.object({
+  rights: z.string().min(1, "Rights statement is required"),
+  rightsLang: z.string().optional(),
+  rightsSchemeUri: z.string().optional(),
+  rightsIdentifierScheme: z.string().optional(),
+  rightsIdentifier: z.string().optional(),
+  rightsUri: z.string().optional(),
+});
+
+export const FundingReferenceSchema = z.object({
+  funderName: z.string().min(1, "Funder name is required"),
+  funderIdentifier: z.string().optional(),
+  funderIdentifierType: z.string().optional(),
+  awardNumber: z.string().optional(),
+  awarUri: z.string().optional(),
+  awardTitle: z.string().optional(),
+  awardTitleLang: z.string().optional(),
+});
+
+export const OtherFieldsSchema = z.object({
+  language: z.string().min(1, "Language is required"),
+  alternateIdentifiers: z.array(AlternateIdentifierSchema).optional(),
+  sizes: z.array(z.string().min(1, "Size is required")).optional(),
+  formats: z.array(z.string().min(1, "Format is required")).optional(),
+  version: z.string().min(1, "Version is required"),
+  rights: z.array(RightsSchema).optional(),
+  fundingReferences: z.array(FundingReferenceSchema).optional(),
+});
+
+export type OtherFieldsType = z.infer<typeof OtherFieldsSchema>;

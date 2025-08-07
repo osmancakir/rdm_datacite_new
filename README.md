@@ -66,12 +66,26 @@ Make sure to deploy the output of `npm run build`
 │   └── server/    # Server-side code
 ```
 
+## Tasks
+
+- Browser localStorage for persisting data accross updates.
+- marketing page
+- /home page with two buttons: 
+    - Create data
+    - Upload and Edit Data
+- 3 step form for better UX with full fieldset
+
+
 ## Features
 
-- Browser localStorage for persisting data accross updates. In the future: Sqlite? 
-- Wizard form for better ux
+- Browser localStorage for persisting data accross updates. In the future: Sqlite?
+    - Can add authentication, save and continue whenever you want to etc. features
+- 3 step form for better UX
+- Generates Valid XML
 - Better Validation for fields
+- Schema Validation for submission
 - Documentation for the fields are included in the codebase
 - Parsing the form from and to XML and JSON
 - Light and Dark Mode support.
+- Reset and Select All 
 
