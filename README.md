@@ -74,6 +74,11 @@ Make sure to deploy the output of `npm run build`
     - Create data
     - Upload and Edit Data
 - 3 step form for better UX with full fieldset
+- manage multiple drafts
+- create gallery
+- support docs -> markdown rendering
+- add information dialogs to fields
+- add examples rendering
 
 
 ## Features

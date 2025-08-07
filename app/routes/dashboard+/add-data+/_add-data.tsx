@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet } from "react-router";
+import { Outlet, useParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import HorizontalStepperNav from "@/components/horizontal-stepper";
 import XmlOutput from "@/components/xml-output";
@@ -10,36 +10,30 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { loadFormDraft } from "@/lib/localStorage";
+import { getDraftById } from "@/lib/localStorage";
 import { generateXml } from "@/lib/xml";
 import { CodeXml } from "lucide-react";
 
 export default function Layout() {
   const [xmlOutput, setXmlOutput] = useState("");
 
-  const draft = loadFormDraft();
+  const { id } = useParams<{ id: string }>();
+
+  const draft = id ? getDraftById(id) : null;
   const hasData =
     Boolean(draft?.mandatory && Object.keys(draft.mandatory).length > 0) ||
     Boolean(draft?.recommended && Object.keys(draft.recommended).length > 0) ||
     Boolean(draft?.other && Object.keys(draft.other).length > 0);
 
   const handlePreview = () => {
-    const draft = loadFormDraft();
-    const hasData =
-      Boolean(draft?.mandatory && Object.keys(draft.mandatory).length > 0) ||
-      Boolean(
-        draft?.recommended && Object.keys(draft.recommended).length > 0
-      ) ||
-      Boolean(draft?.other && Object.keys(draft.other).length > 0);
+    if (!draft) return;
 
-    if (hasData) {
-      const xml = generateXml({
-        mandatory: draft.mandatory,
-        recommended: draft.recommended,
-        other: draft.other,
-      });
-      setXmlOutput(xml);
-    }
+    const xml = generateXml({
+      mandatory: draft.mandatory,
+      recommended: draft.recommended,
+      other: draft.other,
+    });
+    setXmlOutput(xml);
   };
 
   return (

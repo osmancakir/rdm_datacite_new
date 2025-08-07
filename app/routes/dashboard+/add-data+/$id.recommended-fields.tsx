@@ -10,8 +10,9 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { PlusIcon, XIcon} from "lucide-react";
-import { loadFormDraft, saveFormStep } from "@/lib/localStorage";
+import { PlusIcon, XIcon } from "lucide-react";
+import { useParams } from "react-router";
+import { saveDraftStep, getDraftById } from "@/lib/localStorage";
 import {
   RecommendedFieldsSchema,
   type RecommendedFieldsType,
@@ -109,7 +110,11 @@ const relationTypes = [
 
 const descriptionTypes = ["Abstract", "Methods", "TechnicalInfo"];
 export default function RecommendedFields() {
-  const saved = loadFormDraft().recommended || {};
+  const { id } = useParams<{ id: string }>();
+  // 100% sure id will be there
+  if (!id) throw new Error("Missing draft ID");
+  const saved = getDraftById(id)?.recommended || {};
+  //const saved = loadFormDraft().recommended || {};
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -132,7 +137,9 @@ export default function RecommendedFields() {
   // Store polygon point counts for each geoLocation
   const [polygonPointCounts, setPolygonPointCounts] = useState<number[]>(
     // TODO: check this type
-    saved.geoLocations?.map((geo: { polygon: string | any[]; }) => geo.polygon?.length || 1) || [1]
+    saved.geoLocations?.map(
+      (geo: { polygon: string | any[] }) => geo.polygon?.length || 1
+    ) || [1]
   );
 
   const getError = (path: string) => errors[path]?.[0] || "";
@@ -270,7 +277,7 @@ export default function RecommendedFields() {
       }
 
       setErrors({});
-      saveFormStep("recommended", result.data);
+      saveDraftStep(id, "recommended", result.data);
 
       return true;
     } catch (err) {
@@ -281,13 +288,13 @@ export default function RecommendedFields() {
 
   const handleSaveAndNext = () => {
     if (validateAndSave()) {
-      navigate("/dashboard/add-data/other-fields");
+      navigate(`/dashboard/add-data/${id}/other-fields`);
     }
   };
 
   const handleSaveAndBack = () => {
     if (validateAndSave()) {
-      navigate("/dashboard/add-data");
+      navigate(`/dashboard/add-data/${id}/mandatory-fields`);
     }
   };
 
@@ -368,7 +375,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setSubjectCount((prev:number) => prev - 1);
+                      setSubjectCount((prev: number) => prev - 1);
                       // Clear errors for removed subject
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -390,7 +397,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setSubjectCount((prev:number) => prev + 1)}
+            onClick={() => setSubjectCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" /> Add Subject
           </Button>
@@ -482,7 +489,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setContributorCount((prev:number) => prev - 1);
+                      setContributorCount((prev: number) => prev - 1);
                       // Clear errors for removed contributor
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -504,7 +511,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setContributorCount((prev:number) => prev + 1)}
+            onClick={() => setContributorCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Contributor
@@ -562,7 +569,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setDateCount((prev:number) => prev - 1);
+                      setDateCount((prev: number) => prev - 1);
                       // Clear errors for removed date
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -584,7 +591,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setDateCount((prev:number) => prev + 1)}
+            onClick={() => setDateCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Date
@@ -669,7 +676,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setRelatedIdentifierCount((prev:number) => prev - 1);
+                      setRelatedIdentifierCount((prev: number) => prev - 1);
                       // Clear errors for removed identifier
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -691,7 +698,9 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setRelatedIdentifierCount((prev:number) => prev + 1)}
+            onClick={() =>
+              setRelatedIdentifierCount((prev: number) => prev + 1)
+            }
           >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Related Identifier
@@ -752,7 +761,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setDescriptionCount((prev:number) => prev - 1);
+                      setDescriptionCount((prev: number) => prev - 1);
                       // Clear errors for removed description
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -774,7 +783,7 @@ export default function RecommendedFields() {
 
           <Button
             variant="secondary"
-            onClick={() => setDescriptionCount((prev:number) => prev + 1)}
+            onClick={() => setDescriptionCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 w-4 h-4" />
             Add Description
@@ -893,7 +902,7 @@ export default function RecommendedFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setGeoLocationCount((prev:number) => prev - 1);
+                      setGeoLocationCount((prev: number) => prev - 1);
                       // Update polygon counts
                       setPolygonPointCounts((prev) => {
                         const newCounts = [...prev];
@@ -922,7 +931,7 @@ export default function RecommendedFields() {
           <Button
             variant="secondary"
             onClick={() => {
-              setGeoLocationCount((prev:number) => prev + 1);
+              setGeoLocationCount((prev: number) => prev + 1);
               // Add initial polygon count for new geoLocation
               setPolygonPointCounts((prev) => [...prev, 1]);
             }}

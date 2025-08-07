@@ -8,9 +8,10 @@ import {
   SelectValue,
   SelectItem,
 } from "@/components/ui/select";
-import { XIcon, PlusIcon} from "lucide-react";
+import { XIcon, PlusIcon } from "lucide-react";
 import { useNavigate } from "react-router";
-import { saveFormStep, loadFormDraft } from "@/lib/localStorage";
+import { useParams } from "react-router";
+import { saveDraftStep, getDraftById } from "@/lib/localStorage";
 import {
   MandatoryFieldsSchema,
   type MandatoryFieldsType,
@@ -38,7 +39,11 @@ const resourceTypeGeneralOptions = [
 ];
 
 export default function MandatoryFields() {
-  const saved = loadFormDraft().mandatory || {};
+  const { id } = useParams<{ id: string }>();
+  // 100% sure id will be there
+  if (!id) throw new Error('Missing draft ID')
+
+  const saved = getDraftById(id)?.mandatory || {};
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -50,9 +55,9 @@ export default function MandatoryFields() {
   const [titleCount, setTitleCount] = useState(initialTitleCount);
   const [creatorCount, setCreatorCount] = useState(initialCreatorCount);
 
-  const handleAddTitle = () => setTitleCount((prev:number) => prev + 1);
+  const handleAddTitle = () => setTitleCount((prev: number) => prev + 1);
   const handleRemoveTitle = (index: number) => {
-    setTitleCount((prev:number) => prev - 1);
+    setTitleCount((prev: number) => prev - 1);
     // Clear errors for removed title
     setErrors((prev) => {
       const newErrors = { ...prev };
@@ -65,9 +70,9 @@ export default function MandatoryFields() {
     });
   };
 
-  const handleAddCreator = () => setCreatorCount((prev:number) => prev + 1);
+  const handleAddCreator = () => setCreatorCount((prev: number) => prev + 1);
   const handleRemoveCreator = (index: number) => {
-    setCreatorCount((prev:number) => prev - 1);
+    setCreatorCount((prev: number) => prev - 1);
     // Clear errors for removed creator
     setErrors((prev) => {
       const newErrors = { ...prev };
@@ -132,7 +137,7 @@ export default function MandatoryFields() {
         return false;
       }
       setErrors({});
-      saveFormStep("mandatory", result.data);
+      saveDraftStep(id, "mandatory", result.data);
       return true;
     } catch (err) {
       console.error("Validation error:", err);
@@ -142,7 +147,7 @@ export default function MandatoryFields() {
 
   const handleSaveAndNext = () => {
     if (validateAndSave()) {
-      navigate("recommended-fields");
+      navigate(`/dashboard/add-data/${id}/recommended-fields`);
     }
   };
 
@@ -430,7 +435,9 @@ export default function MandatoryFields() {
           <Button variant="outline" onClick={handleSave} type="button">
             Save
           </Button>
-          <Button onClick={handleSaveAndNext}>Next: Recommended Fields →</Button>
+          <Button onClick={handleSaveAndNext}>
+            Next: Recommended Fields →
+          </Button>
         </div>
       </form>
     </div>

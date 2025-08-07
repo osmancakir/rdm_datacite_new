@@ -2,7 +2,8 @@ import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
-import { saveFormStep, loadFormDraft } from "@/lib/localStorage";
+import { useParams } from "react-router";
+import { saveDraftStep, getDraftById } from "@/lib/localStorage";
 import { PlusIcon, XIcon } from "lucide-react";
 import { OtherFieldsSchema, type OtherFieldsType } from "@/types/fields";
 import {
@@ -38,7 +39,11 @@ const alternateIdentifierTypeOptions = [
 const funderIdentifierTypes = ["EU", "DFG", "FWF", "Other"];
 
 export default function OtherFields() {
-  const saved = loadFormDraft().other || {};
+  const { id } = useParams<{ id: string }>();
+  // 100% sure id will be there
+  if (!id) throw new Error("Missing draft ID");
+  const saved = getDraftById(id)?.other || {};
+
   const formRef = useRef<HTMLFormElement>(null);
   const navigate = useNavigate();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -127,7 +132,7 @@ export default function OtherFields() {
       }
 
       setErrors({});
-      saveFormStep("other", result.data);
+      saveDraftStep(id, "other", result.data);
       return true;
     } catch (err) {
       console.error("Validation error", err);
@@ -139,10 +144,9 @@ export default function OtherFields() {
     // write proper action later for now it should save everything to the storage
     // even though the user went back
     if (validateAndSave()) {
-      navigate("/dashboard/add-data/recommended-fields");
+      navigate(`/dashboard/add-data/${id}/recommended-fields`);
     }
   };
-
 
   const handleSaveAndFinish = () => {
     if (validateAndSave()) navigate("/dashboard");
@@ -222,7 +226,7 @@ export default function OtherFields() {
                   variant="ghost"
                   size="icon"
                   onClick={() => {
-                    setAlternateIdCount((prev:number) => prev - 1);
+                    setAlternateIdCount((prev: number) => prev - 1);
                     // Clear errors for removed item
                     setErrors((prev) => {
                       const newErrors = { ...prev };
@@ -242,7 +246,7 @@ export default function OtherFields() {
           })}
           <Button
             variant="secondary"
-            onClick={() => setAlternateIdCount((prev:number) => prev + 1)}
+            onClick={() => setAlternateIdCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 h-4 w-4" /> Add Alternate Identifier
           </Button>
@@ -271,7 +275,7 @@ export default function OtherFields() {
                   variant="ghost"
                   size="icon"
                   onClick={() => {
-                    setSizeCount((prev:number) => prev - 1);
+                    setSizeCount((prev: number) => prev - 1);
                     // Clear errors for removed item
                     setErrors((prev) => {
                       const newErrors = { ...prev };
@@ -287,7 +291,7 @@ export default function OtherFields() {
           })}
           <Button
             variant="secondary"
-            onClick={() => setSizeCount((prev:number) => prev + 1)}
+            onClick={() => setSizeCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 h-4 w-4" /> Add Size
           </Button>
@@ -316,7 +320,7 @@ export default function OtherFields() {
                   variant="ghost"
                   size="icon"
                   onClick={() => {
-                    setFormatCount((prev:number) => prev - 1);
+                    setFormatCount((prev: number) => prev - 1);
                     // Clear errors for removed item
                     setErrors((prev) => {
                       const newErrors = { ...prev };
@@ -332,7 +336,7 @@ export default function OtherFields() {
           })}
           <Button
             variant="secondary"
-            onClick={() => setFormatCount((prev:number) => prev + 1)}
+            onClick={() => setFormatCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 h-4 w-4" /> Add Format
           </Button>
@@ -446,7 +450,7 @@ export default function OtherFields() {
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setRightsCount((prev:number) => prev - 1);
+                      setRightsCount((prev: number) => prev - 1);
                       // Clear errors for removed item
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -467,7 +471,7 @@ export default function OtherFields() {
           })}
           <Button
             variant="secondary"
-            onClick={() => setRightsCount((prev:number) => prev + 1)}
+            onClick={() => setRightsCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 h-4 w-4" /> Add Rights Statement
           </Button>
@@ -580,7 +584,7 @@ export default function OtherFields() {
                     size="icon"
                     className="absolute top-2 right-2"
                     onClick={() => {
-                      setFundingRefCount((prev:number) => prev - 1);
+                      setFundingRefCount((prev: number) => prev - 1);
                       // Clear errors for removed item
                       setErrors((prev) => {
                         const newErrors = { ...prev };
@@ -601,7 +605,7 @@ export default function OtherFields() {
           })}
           <Button
             variant="secondary"
-            onClick={() => setFundingRefCount((prev:number) => prev + 1)}
+            onClick={() => setFundingRefCount((prev: number) => prev + 1)}
           >
             <PlusIcon className="mr-2 h-4 w-4" /> Add Funding Reference
           </Button>
