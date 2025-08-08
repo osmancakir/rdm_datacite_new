@@ -86,9 +86,10 @@ export default function OtherFields() {
       rights: Array.from({ length: rightsCount }).map((_, i) => ({
         rights: formData.get(`rights[${i}].rights`) as string,
         rightsUri: formData.get(`rights[${i}].rightsUri`) as string,
-        rightsIdentifier: formData.get(
-          `rights[${i}].rightsIdentifier`
-        ) as string,
+        rightsLang: formData.get(`rights[${i}].rightsLang`) as string,
+        rightsSchemeUri: formData.get(`rights[${i}].rightsSchemeUri`) as string,
+        rightsIdentifierScheme: formData.get(`rights[${i}].rightsIdentifierScheme`) as string,
+        rightsIdentifier: formData.get(`rights[${i}].rightsIdentifier`) as string,
       })),
       fundingReferences: Array.from({ length: fundingRefCount }).map(
         (_, i) => ({
@@ -104,7 +105,7 @@ export default function OtherFields() {
           awardNumber: formData.get(
             `fundingReferences[${i}].awardNumber`
           ) as string,
-          awardUri: formData.get(`fundingReferences[${i}].awardUri`) as string,
+          awardNumberUri: formData.get(`fundingReferences[${i}].awardNumberUri`) as string,
           awardTitle: formData.get(
             `fundingReferences[${i}].awardTitle`
           ) as string,
@@ -557,13 +558,13 @@ export default function OtherFields() {
                   </p>
                 )}
                 <Input
-                  name={`fundingReferences[${index}].awardUri`}
-                  defaultValue={savedFunding.awardUri}
+                  name={`fundingReferences[${index}].awardNumberUri`}
+                  defaultValue={savedFunding.awardNumberUri}
                   placeholder="Award Uri"
                 />
-                {getError(`fundingReferences.${index}.awardUri`) && (
+                {getError(`fundingReferences.${index}.awardNumberUri`) && (
                   <p className="mt-1 text-xs text-destructive">
-                    {getError(`fundingReferences.${index}.awardUri`)}
+                    {getError(`fundingReferences.${index}.awardNumberUri`)}
                   </p>
                 )}
                 <Input

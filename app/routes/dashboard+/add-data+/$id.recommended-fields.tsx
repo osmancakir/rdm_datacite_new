@@ -108,6 +108,8 @@ const relationTypes = [
   "IsCompiledBy",
 ];
 
+const nameIdentifierSchemeOptions = ["GND", "ORCID"]
+
 const descriptionTypes = ["Abstract", "Methods", "TechnicalInfo"];
 export default function RecommendedFields() {
   const { id } = useParams<{ id: string }>();
@@ -472,11 +474,21 @@ export default function RecommendedFields() {
                     name={`contributors[${index}].nameIdentifier`}
                     defaultValue={savedContributor.nameIdentifier}
                   />
-                  <Input
-                    placeholder="Identifier Scheme"
+                  <Select
                     name={`contributors[${index}].nameIdentifierScheme`}
                     defaultValue={savedContributor.nameIdentifierScheme}
-                  />
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue placeholder="Identifier Scheme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nameIdentifierSchemeOptions.map((scheme) => (
+                        <SelectItem key={scheme} value={scheme}>
+                          {scheme}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Input
                     placeholder="Scheme URI"
                     name={`contributors[${index}].schemeURI`}

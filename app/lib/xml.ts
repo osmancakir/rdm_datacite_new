@@ -143,17 +143,13 @@ export function generateXml(form: FormDataDraft): string {
   if (dates.length > 0) {
     xml += "\t<dates>\n";
     for (const d of dates) {
-      const attrs = {
+      const attrs: Record<string, string> = {
         dateType: d.dateType,
       };
-      const combined = d.dateInformation
-        ? escape(d.date) +
-          "<dateInformation>" +
-          escape(d.dateInformation) +
-          "</dateInformation>"
-        : escape(d.date);
-
-      xml += `${indent(2)}<date dateType="${escape(d.dateType)}">${combined}</date>\n`;
+      if (d.dateInformation) {
+        attrs["dateInformation"] = d.dateInformation;
+      }
+      xml += elAttr("date", d.date, attrs, 2);
     }
     xml += "\t</dates>\n";
   }
@@ -320,16 +316,16 @@ export function generateXml(form: FormDataDraft): string {
 
       // Award number
       if (f.awardNumber) {
-        // Note: The XML structure shows an awardURI attribute on awardNumber,
-        // but our form doesn't collect this. We can add it later if needed.
-        xml += el("awardNumber", f.awardNumber, 3);
+        const attrs: Record<string, string> = {};
+        if (f.awardNumberUri) attrs["awardURI"] = f.awardNumberUri;
+        xml += elAttr("awardNumber", f.awardNumber, attrs, 3);
       }
 
       // Award title
       if (f.awardTitle) {
-        // Note: The XML structure shows an xml:lang attribute on awardTitle,
-        // but our form doesn't collect this. We can add it later if needed.
-        xml += el("awardTitle", f.awardTitle, 3);
+        const attrs: Record<string, string> = {};
+        if (f.awardTitleLang) attrs["xml:lang"] = f.awardTitleLang;
+        xml += elAttr("awardTitle", f.awardTitle, attrs, 3);
       }
 
       xml += "\t\t</fundingReference>\n";

@@ -199,7 +199,7 @@ export const FundingReferenceSchema = z.object({
   funderIdentifier: z.string().optional(),
   funderIdentifierType: z.string().optional(),
   awardNumber: z.string().optional(),
-  awarUri: z.string().optional(),
+  awardNumberUri: z.string().optional(),
   awardTitle: z.string().optional(),
   awardTitleLang: z.string().optional(),
 });
