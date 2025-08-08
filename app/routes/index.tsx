@@ -171,7 +171,7 @@ export default function IndexPage() {
             Generate compliant DataCite XML metadata in minutes with our guided interface.
           </p>
           <Button asChild size="lg">
-            <Link to="/add-data">Get Started Now</Link>
+            <Link to="/dashboard">Get Started Now</Link>
           </Button>
         </section>
       </main>

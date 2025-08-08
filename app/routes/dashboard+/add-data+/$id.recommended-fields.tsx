@@ -953,7 +953,7 @@ export default function RecommendedFields() {
           </Button>
         </section>
 
-        <div className="flex gap-4 pt-8">
+        <div className="flex flex-col md:flex-row gap-4 pt-8">
           <Button variant="outline" onClick={handleSaveAndBack}>
             ← Back
           </Button>
