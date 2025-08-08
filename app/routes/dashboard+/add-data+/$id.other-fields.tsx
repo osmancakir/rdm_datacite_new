@@ -50,13 +50,13 @@ export default function OtherFields() {
 
   // Initialize counts with saved data
   const [alternateIdCount, setAlternateIdCount] = useState(
-    saved.alternateIdentifiers?.length || 0
+    saved.alternateIdentifiers?.length || 1
   );
-  const [sizeCount, setSizeCount] = useState(saved.sizes?.length || 0);
-  const [formatCount, setFormatCount] = useState(saved.formats?.length || 0);
-  const [rightsCount, setRightsCount] = useState(saved.rights?.length || 0);
+  const [sizeCount, setSizeCount] = useState(saved.sizes?.length || 1);
+  const [formatCount, setFormatCount] = useState(saved.formats?.length || 1);
+  const [rightsCount, setRightsCount] = useState(saved.rights?.length || 1);
   const [fundingRefCount, setFundingRefCount] = useState(
-    saved.fundingReferences?.length || 0
+    saved.fundingReferences?.length || 1
   );
 
   const getError = (path: string) => errors[path]?.[0] || "";
@@ -167,7 +167,9 @@ export default function OtherFields() {
             placeholder="e.g. en"
           />
           {getError("language") && (
-            <p className="mt-1 text-xs text-red-500">{getError("language")}</p>
+            <p className="mt-1 text-xs text-destructive">
+              {getError("language")}
+            </p>
           )}
         </section>
 
@@ -188,7 +190,7 @@ export default function OtherFields() {
                     {getError(
                       `alternateIdentifiers.${index}.alternateIdentifier`
                     ) && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-destructive">
                         {getError(
                           `alternateIdentifiers.${index}.alternateIdentifier`
                         )}
@@ -214,7 +216,7 @@ export default function OtherFields() {
                     {getError(
                       `alternateIdentifiers.${index}.alternateIdentifierType`
                     ) && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-destructive">
                         {getError(
                           `alternateIdentifiers.${index}.alternateIdentifierType`
                         )}
@@ -222,25 +224,27 @@ export default function OtherFields() {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setAlternateIdCount((prev: number) => prev - 1);
-                    // Clear errors for removed item
-                    setErrors((prev) => {
-                      const newErrors = { ...prev };
-                      Object.keys(prev).forEach((key) => {
-                        if (key.startsWith(`alternateIdentifiers.${index}`)) {
-                          delete newErrors[key];
-                        }
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setAlternateIdCount((prev: number) => prev - 1);
+                      // Clear errors for removed item
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        Object.keys(prev).forEach((key) => {
+                          if (key.startsWith(`alternateIdentifiers.${index}`)) {
+                            delete newErrors[key];
+                          }
+                        });
+                        return newErrors;
                       });
-                      return newErrors;
-                    });
-                  }}
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
+                    }}
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             );
           })}
@@ -266,26 +270,28 @@ export default function OtherFields() {
                     placeholder="e.g. 12 pages, 5MB"
                   />
                   {getError(`sizes.${index}`) && (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-destructive">
                       {getError(`sizes.${index}`)}
                     </p>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setSizeCount((prev: number) => prev - 1);
-                    // Clear errors for removed item
-                    setErrors((prev) => {
-                      const newErrors = { ...prev };
-                      delete newErrors[`sizes.${index}`];
-                      return newErrors;
-                    });
-                  }}
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setSizeCount((prev: number) => prev - 1);
+                      // Clear errors for removed item
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors[`sizes.${index}`];
+                        return newErrors;
+                      });
+                    }}
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             );
           })}
@@ -311,26 +317,28 @@ export default function OtherFields() {
                     placeholder="e.g. PDF, CSV"
                   />
                   {getError(`formats.${index}`) && (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-destructive">
                       {getError(`formats.${index}`)}
                     </p>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setFormatCount((prev: number) => prev - 1);
-                    // Clear errors for removed item
-                    setErrors((prev) => {
-                      const newErrors = { ...prev };
-                      delete newErrors[`formats.${index}`];
-                      return newErrors;
-                    });
-                  }}
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setFormatCount((prev: number) => prev - 1);
+                      // Clear errors for removed item
+                      setErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors[`formats.${index}`];
+                        return newErrors;
+                      });
+                    }}
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             );
           })}
@@ -350,7 +358,9 @@ export default function OtherFields() {
             placeholder="e.g. 1.0"
           />
           {getError("version") && (
-            <p className="mt-1 text-xs text-red-500">{getError("version")}</p>
+            <p className="mt-1 text-xs text-destructive">
+              {getError("version")}
+            </p>
           )}
         </section>
 
@@ -372,7 +382,7 @@ export default function OtherFields() {
                       placeholder="Rights statement"
                     />
                     {getError(`rights.${index}.rights`) && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-destructive">
                         {getError(`rights.${index}.rights`)}
                       </p>
                     )}
@@ -386,7 +396,7 @@ export default function OtherFields() {
                       maxLength={3}
                     />
                     {getError(`rights.${index}.rightsLang`) && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-destructive">
                         {getError(`rights.${index}.rightsLang`)}
                       </p>
                     )}
@@ -399,7 +409,7 @@ export default function OtherFields() {
                       placeholder="Scheme URI"
                     />
                     {getError(`rights.${index}.rightsSchemeUri`) && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-destructive">
                         {getError(`rights.${index}.rightsSchemeUri`)}
                       </p>
                     )}
@@ -412,7 +422,7 @@ export default function OtherFields() {
                       placeholder="Identifier Scheme"
                     />
                     {getError(`rights.${index}.rightsIdentifierScheme`) && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-destructive">
                         {getError(`rights.${index}.rightsIdentifierScheme`)}
                       </p>
                     )}
@@ -425,7 +435,7 @@ export default function OtherFields() {
                       placeholder="Identifier (e.g. CC-BY-4.0)"
                     />
                     {getError(`rights.${index}.rightsIdentifier`) && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-destructive">
                         {getError(`rights.${index}.rightsIdentifier`)}
                       </p>
                     )}
@@ -438,7 +448,7 @@ export default function OtherFields() {
                       placeholder="Rights URI"
                     />
                     {getError(`rights.${index}.rightsUri`) && (
-                      <p className="mt-1 text-xs text-red-500">
+                      <p className="mt-1 text-xs text-destructive">
                         {getError(`rights.${index}.rightsUri`)}
                       </p>
                     )}
@@ -493,7 +503,7 @@ export default function OtherFields() {
                   placeholder="Funder Name"
                 />
                 {getError(`fundingReferences.${index}.funderName`) && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p className="mt-1 text-xs text-destructive">
                     {getError(`fundingReferences.${index}.funderName`)}
                   </p>
                 )}
@@ -504,7 +514,7 @@ export default function OtherFields() {
                   placeholder="Funder Identifier"
                 />
                 {getError(`fundingReferences.${index}.funderIdentifier`) && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p className="mt-1 text-xs text-destructive">
                     {getError(`fundingReferences.${index}.funderIdentifier`)}
                   </p>
                 )}
@@ -528,7 +538,7 @@ export default function OtherFields() {
                   {getError(
                     `fundingReferences.${index}.funderIdentifierType`
                   ) && (
-                    <p className="mt-1 text-xs text-red-500">
+                    <p className="mt-1 text-xs text-destructive">
                       {getError(
                         `fundingReferences.${index}.funderIdentifierType`
                       )}
@@ -542,7 +552,7 @@ export default function OtherFields() {
                   placeholder="Award Number"
                 />
                 {getError(`fundingReferences.${index}.awardNumber`) && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p className="mt-1 text-xs text-destructive">
                     {getError(`fundingReferences.${index}.awardNumber`)}
                   </p>
                 )}
@@ -552,7 +562,7 @@ export default function OtherFields() {
                   placeholder="Award Uri"
                 />
                 {getError(`fundingReferences.${index}.awardUri`) && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p className="mt-1 text-xs text-destructive">
                     {getError(`fundingReferences.${index}.awardUri`)}
                   </p>
                 )}
@@ -562,7 +572,7 @@ export default function OtherFields() {
                   placeholder="Award Title"
                 />
                 {getError(`fundingReferences.${index}.awardTitle`) && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p className="mt-1 text-xs text-destructive">
                     {getError(`fundingReferences.${index}.awardTitle`)}
                   </p>
                 )}
@@ -573,7 +583,7 @@ export default function OtherFields() {
                   placeholder="Lang"
                 />
                 {getError(`fundingReferences.${index}.awardTitleLang`) && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p className="mt-1 text-xs text-destructive">
                     {getError(`fundingReferences.${index}.awardTitleLang`)}
                   </p>
                 )}

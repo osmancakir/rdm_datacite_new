@@ -180,7 +180,7 @@ export default function MandatoryFields() {
                     defaultValue={savedTitle.title}
                   />
                   {getError(`titles.${index}.title`) && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-destructive text-xs mt-1">
                       {getError(`titles.${index}.title`)}
                     </p>
                   )}
@@ -241,7 +241,7 @@ export default function MandatoryFields() {
                     defaultValue={savedCreator.name}
                   />
                   {getError(`creators.${index}.name`) && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-destructive text-xs mt-1">
                       {getError(`creators.${index}.name`)}
                     </p>
                   )}
@@ -352,7 +352,7 @@ export default function MandatoryFields() {
                 defaultValue={saved.publisher?.name}
               />
               {getError("publisher.name") && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-destructive text-xs mt-1">
                   {getError("publisher.name")}
                 </p>
               )}
@@ -382,7 +382,7 @@ export default function MandatoryFields() {
               defaultValue={saved.publicationYear}
             />
             {getError("publicationYear") && (
-              <p className="text-red-500 text-xs mt-1">
+              <p className="text-destructive text-xs mt-1">
                 {getError("publicationYear")}
               </p>
             )}
@@ -400,7 +400,7 @@ export default function MandatoryFields() {
                 defaultValue={saved.resourceType?.type}
               />
               {getError("resourceType.type") && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-destructive text-xs mt-1">
                   {getError("resourceType.type")}
                 </p>
               )}
@@ -423,7 +423,7 @@ export default function MandatoryFields() {
                 </SelectContent>
               </Select>
               {getError("resourceType.general") && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-destructive text-xs mt-1">
                   {getError("resourceType.general")}
                 </p>
               )}

@@ -68,17 +68,19 @@ Make sure to deploy the output of `npm run build`
 
 ## Tasks
 
-- Browser localStorage for persisting data accross updates.
-- marketing page
-- /home page with two buttons: 
+- ✅ Browser localStorage for persisting data accross updates.
+- ✅ marketing page
+- ✅ /home page with two buttons: 
     - Create data
-    - Upload and Edit Data
-- 3 step form for better UX with full fieldset
-- manage multiple drafts
-- create gallery
-- support docs -> markdown rendering
+    - Edit Data
+- ✅ 3 step form for better UX with full fieldset
+- ✅ manage multiple drafts
+- ✅ create gallery at home page
+- ✅ support docs -> markdown rendering
+- test xml generation
 - add information dialogs to fields
 - add examples rendering
+- error messages cause layout shift in forms
 
 
 ## Features

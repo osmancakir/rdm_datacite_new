@@ -326,7 +326,7 @@ export default function RecommendedFields() {
                     defaultValue={savedSubject.subject}
                   />
                   {getError(`subjects.${index}.subject`) && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-destructive text-xs mt-1">
                       {getError(`subjects.${index}.subject`)}
                     </p>
                   )}
@@ -420,7 +420,7 @@ export default function RecommendedFields() {
                     defaultValue={savedContributor.name}
                   />
                   {getError(`contributors.${index}.name`) && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-destructive text-xs mt-1">
                       {getError(`contributors.${index}.name`)}
                     </p>
                   )}
@@ -536,7 +536,7 @@ export default function RecommendedFields() {
                     defaultValue={savedDate.date}
                   />
                   {getError(`dates.${index}.date`) && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-destructive text-xs mt-1">
                       {getError(`dates.${index}.date`)}
                     </p>
                   )}
@@ -617,7 +617,7 @@ export default function RecommendedFields() {
                   {getError(
                     `relatedIdentifiers.${index}.relatedIdentifier`
                   ) && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-destructive text-xs mt-1">
                       {getError(
                         `relatedIdentifiers.${index}.relatedIdentifier`
                       )}
@@ -724,7 +724,7 @@ export default function RecommendedFields() {
                     defaultValue={savedDescription.description}
                   />
                   {getError(`descriptions.${index}.description`) && (
-                    <p className="text-red-500 text-xs mt-1">
+                    <p className="text-destructive text-xs mt-1">
                       {getError(`descriptions.${index}.description`)}
                     </p>
                   )}
