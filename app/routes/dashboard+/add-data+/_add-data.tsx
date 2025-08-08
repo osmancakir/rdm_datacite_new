@@ -20,10 +20,6 @@ export default function Layout() {
   const { id } = useParams<{ id: string }>();
 
   const draft = id ? getDraftById(id) : null;
-  const hasData =
-    Boolean(draft?.mandatory && Object.keys(draft.mandatory).length > 0) ||
-    Boolean(draft?.recommended && Object.keys(draft.recommended).length > 0) ||
-    Boolean(draft?.other && Object.keys(draft.other).length > 0);
 
   const handlePreview = () => {
     if (!draft) return;
@@ -37,17 +33,13 @@ export default function Layout() {
   };
 
   return (
-    <div className="p-4 mx-auto flex flex-col min-w-lg">
-      <HorizontalStepperNav />
+    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-col">
 
+      <HorizontalStepperNav />
       <div className="flex justify-end mb-4">
         <Sheet>
           <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              onClick={handlePreview}
-              disabled={!hasData}
-            >
+            <Button variant="outline" onClick={handlePreview}>
               <CodeXml className="h-4 w-4" /> Show XML Preview
             </Button>
           </SheetTrigger>
@@ -64,7 +56,6 @@ export default function Layout() {
           </SheetContent>
         </Sheet>
       </div>
-
       <Outlet />
     </div>
   );

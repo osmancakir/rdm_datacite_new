@@ -303,7 +303,7 @@ export default function RecommendedFields() {
   };
 
   return (
-    <div className="sm:px-16">
+    <div className="w-full px-4 sm:px-16">
       <form
         ref={formRef}
         onSubmit={(e) => e.preventDefault()}

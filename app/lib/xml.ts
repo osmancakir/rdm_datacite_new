@@ -40,37 +40,40 @@ export function generateXml(form: FormDataDraft): string {
   xml += `<resource xmlns="https://schema.datacite.org/meta/kernel-4.3/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.datacite.org/meta/kernel-4.3/ https://schema.datacite.org/meta/kernel-4.3/metadata.xsd">\n`;
 
   // MandatoryFields - Titles
-  xml += "\t<titles>\n";
-  for (const t of titles) {
-    const attrs: Record<string, string> = {};
-    if (t.lang) attrs["xml:lang"] = t.lang;
-    if (t.titleType) attrs["titleType"] = t.titleType;
-    xml += elAttr("title", t.title, attrs, 2);
+  if (titles.length > 0) {
+    xml += "\t<titles>\n";
+    for (const t of titles) {
+      const attrs: Record<string, string> = {};
+      if (t.lang) attrs["xml:lang"] = t.lang;
+      if (t.titleType) attrs["titleType"] = t.titleType;
+      xml += elAttr("title", t.title, attrs, 2);
+    }
+    xml += "\t</titles>\n";
   }
-  xml += "\t</titles>\n";
-
   // MandatoryFields - Creators
-  xml += "\t<creators>\n";
-  for (const c of creators) {
-    xml += "\t\t<creator>\n";
-    xml += elAttr("creatorName", c.name, { nameType: c.nameType }, 3);
-    xml += el("givenName", c.givenName, 3);
-    xml += el("familyName", c.familyName, 3);
-    if (c.nameIdentifier) {
-      const attrs: Record<string, string> = {};
-      if (c.nameIdentifierScheme)
-        attrs["nameIdentifierScheme"] = c.nameIdentifierScheme;
-      if (c.schemeURI) attrs["schemeURI"] = c.schemeURI;
-      xml += elAttr("nameIdentifier", c.nameIdentifier, attrs, 3);
+  if (creators.length > 0) {
+    xml += "\t<creators>\n";
+    for (const c of creators) {
+      xml += "\t\t<creator>\n";
+      xml += elAttr("creatorName", c.name, { nameType: c.nameType }, 3);
+      xml += el("givenName", c.givenName, 3);
+      xml += el("familyName", c.familyName, 3);
+      if (c.nameIdentifier) {
+        const attrs: Record<string, string> = {};
+        if (c.nameIdentifierScheme)
+          attrs["nameIdentifierScheme"] = c.nameIdentifierScheme;
+        if (c.schemeURI) attrs["schemeURI"] = c.schemeURI;
+        xml += elAttr("nameIdentifier", c.nameIdentifier, attrs, 3);
+      }
+      if (c.affiliation) {
+        const attrs: Record<string, string> = {};
+        if (c.lang) attrs["xml:lang"] = c.lang;
+        xml += elAttr("affiliation", c.affiliation, attrs, 3);
+      }
+      xml += "\t\t</creator>\n";
     }
-    if (c.affiliation) {
-      const attrs: Record<string, string> = {};
-      if (c.lang) attrs["xml:lang"] = c.lang;
-      xml += elAttr("affiliation", c.affiliation, attrs, 3);
-    }
-    xml += "\t\t</creator>\n";
+    xml += "\t</creators>\n";
   }
-  xml += "\t</creators>\n";
 
   // MandatoryFields - Publisher
   if (publisher?.name) {
@@ -236,7 +239,7 @@ export function generateXml(form: FormDataDraft): string {
     xml += "\t</geoLocations>\n";
   }
 
-// OtherFields - Language
+  // OtherFields - Language
   if (form.other?.language) {
     xml += el("language", form.other.language, 1);
   }
@@ -247,7 +250,7 @@ export function generateXml(form: FormDataDraft): string {
     xml += "\t<alternateIdentifiers>\n";
     for (const a of alternateIdentifiers) {
       const attrs: Record<string, string> = {
-        alternateIdentifierType: a.alternateIdentifierType
+        alternateIdentifierType: a.alternateIdentifierType,
       };
       xml += elAttr("alternateIdentifier", a.alternateIdentifier, attrs, 2);
     }
@@ -287,10 +290,11 @@ export function generateXml(form: FormDataDraft): string {
       const attrs: Record<string, string> = {};
       if (r.rightsLang) attrs["xml:lang"] = r.rightsLang;
       if (r.rightsSchemeUri) attrs["schemeURI"] = r.rightsSchemeUri;
-      if (r.rightsIdentifierScheme) attrs["rightsIdentifierScheme"] = r.rightsIdentifierScheme;
+      if (r.rightsIdentifierScheme)
+        attrs["rightsIdentifierScheme"] = r.rightsIdentifierScheme;
       if (r.rightsIdentifier) attrs["rightsIdentifier"] = r.rightsIdentifier;
       if (r.rightsUri) attrs["rightsURI"] = r.rightsUri;
-      
+
       xml += elAttr("rights", r.rights, attrs, 2);
     }
     xml += "\t</rightsList>\n";
@@ -302,31 +306,32 @@ export function generateXml(form: FormDataDraft): string {
     xml += "\t<fundingReferences>\n";
     for (const f of fundingReferences) {
       xml += "\t\t<fundingReference>\n";
-      
+
       // Funder name
       xml += el("funderName", f.funderName, 3);
-      
+
       // Funder identifier
       if (f.funderIdentifier) {
         const attrs: Record<string, string> = {};
-        if (f.funderIdentifierType) attrs["funderIdentifierType"] = f.funderIdentifierType;
+        if (f.funderIdentifierType)
+          attrs["funderIdentifierType"] = f.funderIdentifierType;
         xml += elAttr("funderIdentifier", f.funderIdentifier, attrs, 3);
       }
-      
+
       // Award number
       if (f.awardNumber) {
         // Note: The XML structure shows an awardURI attribute on awardNumber,
         // but our form doesn't collect this. We can add it later if needed.
         xml += el("awardNumber", f.awardNumber, 3);
       }
-      
+
       // Award title
       if (f.awardTitle) {
         // Note: The XML structure shows an xml:lang attribute on awardTitle,
         // but our form doesn't collect this. We can add it later if needed.
         xml += el("awardTitle", f.awardTitle, 3);
       }
-      
+
       xml += "\t\t</fundingReference>\n";
     }
     xml += "\t</fundingReferences>\n";
@@ -335,7 +340,6 @@ export function generateXml(form: FormDataDraft): string {
   xml += `</resource>\n`;
   return xml;
 }
-
 
 export function downloadXml(xmlOutput) {
   const blob = new Blob([xmlOutput], { type: "application/xml" });
