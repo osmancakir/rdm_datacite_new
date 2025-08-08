@@ -604,9 +604,13 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean
 }) {
-  // Random width between 50 to 90%.
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`
+  // React Router is complaining:
+  // A tree hydrated but some attributes of the server rendered HTML didn't match the client properties.
+  // This won't be patched up. This can happen if a SSR-ed Client
+  // Use a fixed width for SSR, randomize only on client.
+  const [width, setWidth] = React.useState("70%")
+  React.useEffect(() => {
+    setWidth(`${Math.floor(Math.random() * 40) + 50}%`)
   }, [])
 
   return (

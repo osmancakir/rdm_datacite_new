@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { saveDraft } from "@/lib/localStorage";
 import { getDrafts, deleteDraft, type FormDataDraft } from "@/lib/localStorage";
 import { formatDistanceToNow } from "date-fns";
+import { CodeXml } from "lucide-react";
+import { Input } from "@/components/ui/input";
 // TODO: could be improved
 const exampleProjects = [
   {
@@ -52,6 +54,7 @@ const exampleProjects = [
 ];
 
 export default function Dashboard() {
+  const [draftName, setDraftName] = useState("");
   const [drafts, setDrafts] = useState<FormDataDraft[]>([]);
   useEffect(() => {
     setDrafts(getDrafts());
@@ -62,7 +65,7 @@ export default function Dashboard() {
 
     saveDraft({
       id,
-      title: `Untitled Draft`,
+      title: draftName,
       createdAt: new Date().toISOString(),
       lastUpdated: new Date().toISOString(),
       mandatory: {},
@@ -85,16 +88,33 @@ export default function Dashboard() {
       </h1>
 
       {/* Button Row */}
-      <div className="flex justify-center gap-4">
-        <Button onClick={handleAddNew}>Add New</Button>
-        <Button asChild>
-          <Link to="/add-new">Upload</Link>
+      <div className="flex flex-col md:flex-row justify-center gap-4">
+        <div className="w-96">
+        <Input
+          placeholder="Enter Draft Name"
+          value={draftName}
+          onChange={(e) => setDraftName(e.target.value)}
+        />
+       
+        <p className="text-xs text-muted-foreground ml-2 mb-2">
+          *Draft Name is not part of your xml. Used only for the App.
+        </p>
+         </div>
+        <Button onClick={handleAddNew} disabled={draftName.length === 0}>
+          Add New
+        </Button>
+        <Button disabled>
+          <CodeXml className="h-4 w-4" /> Upload XML
         </Button>
       </div>
 
       {/* Your Drafts */}
       <section>
-        <h2 className="text-xl font-medium mb-4">Your drafts</h2>
+        <h2 className="text-xl font-medium">Your drafts</h2>
+        <p className="text-xs text-muted-foreground -mt-1 mb-2">
+          *These are saved in your browser storage. If you delete site data; all
+          drafts will be lost
+        </p>
         {drafts.length === 0 ? (
           <div className="border rounded-lg p-6 text-muted-foreground text-center">
             No drafts yet.

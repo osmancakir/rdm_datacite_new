@@ -92,8 +92,8 @@ export default function IndexPage() {
             <Button asChild size="lg">
               <Link to="/dashboard">Start Creating Metadata</Link>
             </Button>
-            <Button variant="outline" size="lg">
-              View Best Practices Guide
+            <Button asChild variant="outline" size="lg">
+              <Link to="/dashboard/docs/best-practice-guide">View Best Practices Guide</Link>
             </Button>
           </div>
         </section>
