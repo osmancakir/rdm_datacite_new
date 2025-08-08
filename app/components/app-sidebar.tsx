@@ -20,7 +20,7 @@ const items = [
   },
   {
     title: "Best Practice Guide",
-    url: "/dashboard/docs",
+    url: "/dashboard/docs/best-practice-guide",
     icon: ScrollText ,
   },
 ]
