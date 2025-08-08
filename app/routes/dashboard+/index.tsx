@@ -89,7 +89,7 @@ export default function Dashboard() {
 
       {/* Button Row */}
       <div className="flex flex-col md:flex-row justify-center gap-4">
-        <div className="w-96">
+        <div className="w-full md:w-96">
         <Input
           placeholder="Enter Draft Name"
           value={draftName}
