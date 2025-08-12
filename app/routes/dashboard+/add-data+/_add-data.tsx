@@ -19,10 +19,12 @@ export default function Layout() {
 
   const { id } = useParams<{ id: string }>();
 
-  const draft = id ? getDraftById(id) : null;
-
   const handlePreview = () => {
-    if (!draft) return;
+    const draft = id ? getDraftById(id) : null;
+    if (!draft) {
+      setXmlOutput("No draft data found.");
+      return;
+    }
 
     const xml = generateXml({
       mandatory: draft.mandatory,
@@ -34,7 +36,6 @@ export default function Layout() {
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-4 flex flex-col">
-
       <HorizontalStepperNav />
       <div className="flex justify-end mb-4">
         <Sheet>

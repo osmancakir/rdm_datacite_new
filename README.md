@@ -79,7 +79,7 @@ Make sure to deploy the output of `npm run build`
 - add information dialogs to fields
 - ✅add examples
 - Bug: error messages cause layout shift in forms
-- Bug: after save XML preview is not updated ?? 
+- ✅ Bug: after save XML preview is not updated
 
 
 ## Features
