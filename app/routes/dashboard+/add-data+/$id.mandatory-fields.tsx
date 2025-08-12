@@ -275,37 +275,37 @@ export default function MandatoryFields() {
                   defaultValue={savedCreator.familyName}
                 />
 
-                <div className="flex flex-wrap gap-2 items-center">
-                  <Input
-                    name={`creators[${index}].nameIdentifier`}
-                    placeholder="Name Identifier"
-                    className="flex-1"
-                    defaultValue={savedCreator.nameIdentifier}
-                  />
+<div className="flex flex-col lg:flex-row flex-wrap gap-2 items-center">
+  <Input
+    name={`creators[${index}].nameIdentifier`}
+    placeholder="Name Identifier"
+    className="flex-1"
+    defaultValue={savedCreator.nameIdentifier}
+  />
 
-                  <Select
-                    name={`creators[${index}].nameIdentifierScheme`}
-                    defaultValue={savedCreator.nameIdentifierScheme}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Identifier Scheme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {nameIdentifierSchemeOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>
-                          {opt}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+  <Select
+    name={`creators[${index}].nameIdentifierScheme`}
+    defaultValue={savedCreator.nameIdentifierScheme}
+  >
+    <SelectTrigger className="w-full lg:w-[200px]">
+      <SelectValue placeholder="Identifier Scheme" />
+    </SelectTrigger>
+    <SelectContent>
+      {nameIdentifierSchemeOptions.map((opt) => (
+        <SelectItem key={opt} value={opt}>
+          {opt}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
 
-                  <Input
-                    className="flex-1"
-                    placeholder="Scheme URI"
-                    name={`creators[${index}].schemeURI`}
-                    defaultValue={savedCreator.schemeURI}
-                  />
-                </div>
+  <Input
+    className="flex-1"
+    placeholder="Scheme URI"
+    name={`creators[${index}].schemeURI`}
+    defaultValue={savedCreator.schemeURI}
+  />
+</div>
 
                 <div className="flex gap-2 items-center">
                   <Input
@@ -390,46 +390,46 @@ export default function MandatoryFields() {
         </section>
 
         {/* Resource Type */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4">Resource Type</h2>
-          <div className="flex flex-wrap gap-2">
-            <div className="flex-1">
-              <Input
-                name="resourceType.type"
-                placeholder="Resource Type (free text)"
-                defaultValue={saved.resourceType?.type}
-              />
-              {getError("resourceType.type") && (
-                <p className="text-destructive text-xs mt-1">
-                  {getError("resourceType.type")}
-                </p>
-              )}
-            </div>
+<section>
+  <h2 className="text-xl font-semibold mb-4">Resource Type</h2>
+  <div className="flex flex-col lg:flex-row flex-wrap gap-2 items-center">
+    <div className="w-full lg:flex-1">
+      <Input
+        name="resourceType.type"
+        placeholder="Resource Type (free text)"
+        defaultValue={saved.resourceType?.type}
+      />
+      {getError("resourceType.type") && (
+        <p className="text-destructive text-xs mt-1">
+          {getError("resourceType.type")}
+        </p>
+      )}
+    </div>
 
-            <div>
-              <Select
-                name="resourceType.general"
-                defaultValue={saved.resourceType?.general}
-              >
-                <SelectTrigger className="w-[250px]">
-                  <SelectValue placeholder="Resource Type General" />
-                </SelectTrigger>
-                <SelectContent>
-                  {resourceTypeGeneralOptions.map((opt) => (
-                    <SelectItem key={opt} value={opt}>
-                      {opt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {getError("resourceType.general") && (
-                <p className="text-destructive text-xs mt-1">
-                  {getError("resourceType.general")}
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
+    <div className="w-full lg:w-[250px]">
+      <Select
+        name="resourceType.general"
+        defaultValue={saved.resourceType?.general}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Resource Type General" />
+        </SelectTrigger>
+        <SelectContent>
+          {resourceTypeGeneralOptions.map((opt) => (
+            <SelectItem key={opt} value={opt}>
+              {opt}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {getError("resourceType.general") && (
+        <p className="text-destructive text-xs mt-1">
+          {getError("resourceType.general")}
+        </p>
+      )}
+    </div>
+  </div>
+</section>
 
         <div className="flex gap-4 mt-8">
           <Button variant="outline" onClick={handleSave} type="button">

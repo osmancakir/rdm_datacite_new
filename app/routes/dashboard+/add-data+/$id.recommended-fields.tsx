@@ -108,7 +108,7 @@ const relationTypes = [
   "IsCompiledBy",
 ];
 
-const nameIdentifierSchemeOptions = ["GND", "ORCID"]
+const nameIdentifierSchemeOptions = ["GND", "ORCID"];
 
 const descriptionTypes = ["Abstract", "Methods", "TechnicalInfo"];
 export default function RecommendedFields() {
@@ -321,25 +321,18 @@ export default function RecommendedFields() {
                 key={index}
                 className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
-                <div>
+                <div className="flex flex-col lg:flex-row gap-2">
                   <Input
                     name={`subjects[${index}].subject`}
                     placeholder="Subject"
                     defaultValue={savedSubject.subject}
+                    className="flex-1"
                   />
-                  {getError(`subjects.${index}.subject`) && (
-                    <p className="text-destructive text-xs mt-1">
-                      {getError(`subjects.${index}.subject`)}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-2">
                   <Select
                     name={`subjects[${index}].scheme`}
                     defaultValue={savedSubject.scheme}
                   >
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Subject Scheme" />
                     </SelectTrigger>
                     <SelectContent>
@@ -350,7 +343,14 @@ export default function RecommendedFields() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+                {getError(`subjects.${index}.subject`) && (
+                  <p className="text-destructive text-xs mt-1">
+                    {getError(`subjects.${index}.subject`)}
+                  </p>
+                )}
 
+                <div className="flex flex-wrap gap-2">
                   <Input
                     placeholder="Scheme URI"
                     name={`subjects[${index}].schemeURI`}
@@ -444,7 +444,7 @@ export default function RecommendedFields() {
                   </SelectContent>
                 </Select>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid lg:grid-cols-2 gap-2">
                   <Input
                     placeholder="Given Name"
                     name={`contributors[${index}].givenName`}
@@ -462,13 +462,14 @@ export default function RecommendedFields() {
                   />
                   <Input
                     placeholder="Lang"
+                    className="w-[80px]"
                     maxLength={3}
                     name={`contributors[${index}].lang`}
                     defaultValue={savedContributor.lang}
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid lg:grid-cols-2 gap-2">
                   <Input
                     placeholder="Name Identifier"
                     name={`contributors[${index}].nameIdentifier`}
@@ -478,7 +479,7 @@ export default function RecommendedFields() {
                     name={`contributors[${index}].nameIdentifierScheme`}
                     defaultValue={savedContributor.nameIdentifierScheme}
                   >
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Identifier Scheme" />
                     </SelectTrigger>
                     <SelectContent>
@@ -489,12 +490,12 @@ export default function RecommendedFields() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input
-                    placeholder="Scheme URI"
-                    name={`contributors[${index}].schemeURI`}
-                    defaultValue={savedContributor.schemeURI}
-                  />
                 </div>
+                <Input
+                  placeholder="Scheme URI"
+                  name={`contributors[${index}].schemeURI`}
+                  defaultValue={savedContributor.schemeURI}
+                />
 
                 {index > 0 && (
                   <Button
@@ -540,6 +541,7 @@ export default function RecommendedFields() {
                 key={index}
                 className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
+                <div className="grid lg:grid-cols-2 gap-2">
                 <div>
                   <Input
                     type="date"
@@ -569,7 +571,7 @@ export default function RecommendedFields() {
                     ))}
                   </SelectContent>
                 </Select>
-
+</div>
                 <Input
                   placeholder="Optional: Date Information"
                   name={`dates[${index}].dateInformation`}
@@ -642,7 +644,7 @@ export default function RecommendedFields() {
                     name={`relatedIdentifiers[${index}].relatedIdentifierType`}
                     defaultValue={savedIdentifier.relatedIdentifierType}
                   >
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Identifier Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -658,7 +660,7 @@ export default function RecommendedFields() {
                     name={`relatedIdentifiers[${index}].relationType`}
                     defaultValue={savedIdentifier.relationType}
                   >
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Relation Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -747,7 +749,7 @@ export default function RecommendedFields() {
                     name={`descriptions[${index}].descriptionType`}
                     defaultValue={savedDescription.descriptionType}
                   >
-                    <SelectTrigger className="w-[220px]">
+                    <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Description Type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -760,8 +762,8 @@ export default function RecommendedFields() {
                   </Select>
 
                   <Input
-                    className="w-[140px]"
-                    placeholder="Lang (e.g. en)"
+                    className="w-[80px]"
+                    placeholder="Lang"
                     name={`descriptions[${index}].lang`}
                     defaultValue={savedDescription.lang}
                     maxLength={3}
