@@ -138,7 +138,7 @@ export default function RecommendedFields() {
   );
   // Store polygon point counts for each geoLocation
   const [polygonPointCounts, setPolygonPointCounts] = useState<number[]>(
-    // TODO: check this type
+    // TODO: check this type I might need to increase this to default 4
     saved.geoLocations?.map(
       (geo: { polygon: string | any[] }) => geo.polygon?.length || 1
     ) || [1]
@@ -542,36 +542,36 @@ export default function RecommendedFields() {
                 className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
                 <div className="grid lg:grid-cols-2 gap-2">
-                <div>
-                  <Input
-                    type="date"
-                    placeholder="Date"
-                    name={`dates[${index}].date`}
-                    defaultValue={savedDate.date}
-                  />
-                  {getError(`dates.${index}.date`) && (
-                    <p className="text-destructive text-xs mt-1">
-                      {getError(`dates.${index}.date`)}
-                    </p>
-                  )}
-                </div>
+                  <div>
+                    <Input
+                      type="date"
+                      placeholder="Date"
+                      name={`dates[${index}].date`}
+                      defaultValue={savedDate.date}
+                    />
+                    {getError(`dates.${index}.date`) && (
+                      <p className="text-destructive text-xs mt-1">
+                        {getError(`dates.${index}.date`)}
+                      </p>
+                    )}
+                  </div>
 
-                <Select
-                  name={`dates[${index}].dateType`}
-                  defaultValue={savedDate.dateType}
-                >
-                  <SelectTrigger className="w-[240px]">
-                    <SelectValue placeholder="Date Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {dateTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-</div>
+                  <Select
+                    name={`dates[${index}].dateType`}
+                    defaultValue={savedDate.dateType}
+                  >
+                    <SelectTrigger className="w-[240px]">
+                      <SelectValue placeholder="Date Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dateTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Input
                   placeholder="Optional: Date Information"
                   name={`dates[${index}].dateInformation`}

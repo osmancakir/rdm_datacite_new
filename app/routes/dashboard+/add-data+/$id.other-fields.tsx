@@ -88,8 +88,12 @@ export default function OtherFields() {
         rightsUri: formData.get(`rights[${i}].rightsUri`) as string,
         rightsLang: formData.get(`rights[${i}].rightsLang`) as string,
         rightsSchemeUri: formData.get(`rights[${i}].rightsSchemeUri`) as string,
-        rightsIdentifierScheme: formData.get(`rights[${i}].rightsIdentifierScheme`) as string,
-        rightsIdentifier: formData.get(`rights[${i}].rightsIdentifier`) as string,
+        rightsIdentifierScheme: formData.get(
+          `rights[${i}].rightsIdentifierScheme`
+        ) as string,
+        rightsIdentifier: formData.get(
+          `rights[${i}].rightsIdentifier`
+        ) as string,
       })),
       fundingReferences: Array.from({ length: fundingRefCount }).map(
         (_, i) => ({
@@ -105,7 +109,9 @@ export default function OtherFields() {
           awardNumber: formData.get(
             `fundingReferences[${i}].awardNumber`
           ) as string,
-          awardNumberUri: formData.get(`fundingReferences[${i}].awardNumberUri`) as string,
+          awardNumberUri: formData.get(
+            `fundingReferences[${i}].awardNumberUri`
+          ) as string,
           awardTitle: formData.get(
             `fundingReferences[${i}].awardTitle`
           ) as string,
