@@ -33,7 +33,7 @@ export default function IndexPage() {
     {
       icon: <FileText className="h-5 w-5" />,
       title: 'Schema Compliant',
-      description: 'Generate DataCite Metadata Schema v4.3 compliant XML files',
+      description: 'Generate DataCite Metadata Schema v4.6 compliant XML files',
     },
     {
       icon: <Shield className="h-5 w-5" />,
@@ -74,13 +74,13 @@ export default function IndexPage() {
               DataCite Metadata Generator
             </div>
           </div>
-          <Badge variant="secondary">v4.3</Badge>
+          <Badge variant="secondary">v4.6</Badge>
         </div>
       </header>
 
       <main className="container py-16 mx-auto">
         <section className="mb-16 text-center">
-          <Badge className="mb-4">DataCite Schema v4.3</Badge>
+          <Badge className="mb-4">DataCite Schema v4.6</Badge>
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl mb-4">
             Generate Compliant Metadata
           </h1>
@@ -140,7 +140,7 @@ export default function IndexPage() {
                 <div className="text-sm text-muted-foreground">Metadata Fields</div>
               </div>
               <div className="rounded-md bg-muted p-4 text-center">
-                <div className="text-2xl font-bold text-primary">v4.3</div>
+                <div className="text-2xl font-bold text-primary">v4.6</div>
                 <div className="text-sm text-muted-foreground">Schema Version</div>
               </div>
             </div>

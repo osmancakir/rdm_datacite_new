@@ -54,7 +54,7 @@ export function AppSidebar() {
 				<SidebarGroup>
 					<SidebarGroupLabel asChild>
 						<NavLink to="/" className="hover:bg-gray-200 my-2 bg-card border">
-							DataCite Metadata Generator 4.3
+							DataCite Metadata Generator 4.6
 						</NavLink>
 					</SidebarGroupLabel>
 

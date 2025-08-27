@@ -54,6 +54,7 @@ const relatedIdentifiersTypes = [
   "ARK",
   "arXiv",
   "bibcode",
+  "CSTR",
   "DOI",
   "EAN13",
   "EISSN",
@@ -66,47 +67,89 @@ const relatedIdentifiersTypes = [
   "LSID",
   "PMID",
   "PURL",
+  "RRID",
   "UPC",
   "URL",
   "URN",
   "w3id",
 ];
 const relationTypes = [
+  "IsCitedBy",
+  "Cites",
+  "IsSupplementTo",
+  "IsSupplementedBy",
+  "IsContinuedBy",
+  "Continues",
+  "IsDescribedBy",
+  "Describes",
+  "HasMetadata",
+  "IsMetadataFor",
   "HasVersion",
   "IsVersionOf",
   "IsNewVersionOf",
   "IsPreviousVersionOf",
+  "IsPartOf",
+  "HasPart",
+  "IsPublishedIn",
+  "IsReferencedBy",
+  "References",
+  "IsDocumentedBy",
+  "Documents",
+  "IsCompiledBy",
+  "Compiles",
   "IsVariantFormOf",
   "IsOriginalFormOf",
   "IsIdenticalTo",
-  "Obsoletes",
-  "IsObsoletedBy",
-  "IsPartOf",
-  "HasPart",
-  "IsSourceOf",
-  "IsDerivedFrom",
-  "Continues",
-  "IsContinuedBy",
-  "IsSupplementTo",
-  "IsSupplementedBy",
-  "IsPublishedIn",
-  "References",
-  "IsReferencedBy",
-  "Cites",
-  "IsCitedBy",
-  "Documents",
-  "IsDocumentedBy",
-  "HasMetadata",
-  "IsMetadataFor",
-  "Describes",
-  "IsDescribedBy",
-  "Reviews",
   "IsReviewedBy",
-  "Requires",
+  "Reviews",
+  "IsDerivedFrom",
+  "IsSourceOf",
   "IsRequiredBy",
-  "Compiles",
-  "IsCompiledBy",
+  "Requires",
+  "IsObsoletedBy",
+  "Obsoletes",
+  "IsCollectedBy",
+  "Collects",
+  "IsTranslationOf",
+  "HasTranslation",
 ];
+
+const resourceTypeGeneralOptions = [
+  "Audiovisual",
+  "Award",
+  "Book",
+  "BookChapter",
+  "Collection",
+  "ComputationalNotebook",
+  "ConferencePaper",
+  "ConferenceProceeding",
+  "DataPaper",
+  "Dataset",
+  "Dissertation",
+  "Event",
+  "Image",
+  "InteractiveResource",
+  "Instrument",
+  "Journal",
+  "JournalArticle",
+  "Model",
+  "OutputManagementPlan",
+  "PeerReview",
+  "PhysicalObject",
+  "Preprint",
+  "Project",
+  "Report",
+  "Service",
+  "Software",
+  "Sound",
+  "Standard",
+  "StudyRegistration",
+  "Text",
+  "Workflow",
+  "Other",
+];
+// TODO: duplicate array
+const nameTypeOptions = ["Personal", "Organizational"];
 
 const nameIdentifierSchemeOptions = ["GND", "ORCID"];
 
@@ -138,10 +181,9 @@ export default function RecommendedFields() {
   );
   // Store polygon point counts for each geoLocation
   const [polygonPointCounts, setPolygonPointCounts] = useState<number[]>(
-    // TODO: check this type I might need to increase this to default 4
     saved.geoLocations?.map(
-      (geo: { polygon: string | any[] }) => geo.polygon?.length || 1
-    ) || [1]
+      (geo: { polygon: string | any[] }) => geo.polygon?.length || 4
+    ) || [4]
   );
 
   const getError = (path: string) => errors[path]?.[0] || "";
@@ -185,13 +227,17 @@ export default function RecommendedFields() {
     return {
       subjects: Array.from({ length: subjectCount }).map((_, i) => ({
         subject: formData.get(`subjects[${i}].subject`) as string,
-        scheme: formData.get(`subjects[${i}].scheme`) as string,
+        subjectScheme: formData.get(`subjects[${i}].subjectScheme`) as string,
         schemeURI: formData.get(`subjects[${i}].schemeURI`) as string,
-        lang: formData.get(`subjects[${i}].lang`) as string,
         valueURI: formData.get(`subjects[${i}].valueURI`) as string,
+        classificationCode: formData.get(
+          `subjects[${i}].classificationCode`
+        ) as string,
+        lang: formData.get(`subjects[${i}].lang`) as string,
       })),
       contributors: Array.from({ length: contributorCount }).map((_, i) => ({
         name: formData.get(`contributors[${i}].name`) as string,
+        nameType: formData.get(`contributors[${i}].nameType`) as string,
         type: formData.get(`contributors[${i}].type`) as string,
         givenName: formData.get(`contributors[${i}].givenName`) as string,
         familyName: formData.get(`contributors[${i}].familyName`) as string,
@@ -201,9 +247,17 @@ export default function RecommendedFields() {
         nameIdentifierScheme: formData.get(
           `contributors[${i}].nameIdentifierScheme`
         ) as string,
-        schemeURI: formData.get(`contributors[${i}].schemeURI`) as string,
+        schemeURI: formData.get(`contributors[${i}].schemeURI`) as string, // for nameIdentifier
         affiliation: formData.get(`contributors[${i}].affiliation`) as string,
-        lang: formData.get(`contributors[${i}].lang`) as string,
+        affiliationIdentifier: formData.get(
+          `contributors[${i}].affiliationIdentifier`
+        ) as string,
+        affiliationIdentifierScheme: formData.get(
+          `contributors[${i}].affiliationIdentifierScheme`
+        ) as string,
+        affiliationSchemeURI: formData.get(
+          `contributors[${i}].affiliationSchemeURI`
+        ) as string,
       })),
       dates: Array.from({ length: dateCount }).map((_, i) => ({
         date: formData.get(`dates[${i}].date`) as string,
@@ -224,11 +278,18 @@ export default function RecommendedFields() {
           relatedMetadataScheme: formData.get(
             `relatedIdentifiers[${i}].relatedMetadataScheme`
           ) as string,
+          schemeURI: formData.get(
+            `relatedIdentifiers[${i}].schemeURI`
+          ) as string,
           schemeType: formData.get(
             `relatedIdentifiers[${i}].schemeType`
           ) as string,
+          resourceTypeGeneral: formData.get(
+            `relatedIdentifiers[${i}].resourceTypeGeneral`
+          ) as string,
         })
       ),
+
       descriptions: Array.from({ length: descriptionCount }).map((_, i) => ({
         description: formData.get(`descriptions[${i}].description`) as string,
         descriptionType: formData.get(
@@ -266,7 +327,7 @@ export default function RecommendedFields() {
     try {
       const formData = parseFormData();
       const result = RecommendedFieldsSchema.safeParse(formData);
-
+      console.log("Validation result:", result);
       if (!result.success) {
         const newErrors: Record<string, string[]> = {};
         result.error.issues.forEach((issue) => {
@@ -329,8 +390,8 @@ export default function RecommendedFields() {
                     className="flex-1"
                   />
                   <Select
-                    name={`subjects[${index}].scheme`}
-                    defaultValue={savedSubject.scheme}
+                    name={`subjects[${index}].subjectScheme`}
+                    defaultValue={savedSubject.subjectScheme}
                   >
                     <SelectTrigger className="w-[240px]">
                       <SelectValue placeholder="Subject Scheme" />
@@ -355,20 +416,26 @@ export default function RecommendedFields() {
                     placeholder="Scheme URI"
                     name={`subjects[${index}].schemeURI`}
                     defaultValue={savedSubject.schemeURI}
+                    className="min-w-[220px]"
                   />
-
                   <Input
                     placeholder="Value URI"
                     name={`subjects[${index}].valueURI`}
                     defaultValue={savedSubject.valueURI}
+                    className="min-w-[220px]"
                   />
-
+                  <Input
+                    placeholder="Classification Code"
+                    name={`subjects[${index}].classificationCode`}
+                    defaultValue={savedSubject.classificationCode}
+                    className="min-w-[200px]"
+                  />
                   <Input
                     placeholder="Lang"
                     maxLength={3}
-                    className="w-[80px]"
                     name={`subjects[${index}].lang`}
                     defaultValue={savedSubject.lang}
+                    className="w-[80px]"
                   />
                 </div>
 
@@ -378,7 +445,6 @@ export default function RecommendedFields() {
                     size="icon"
                     onClick={() => {
                       setSubjectCount((prev: number) => prev - 1);
-                      // Clear errors for removed subject
                       setErrors((prev) => {
                         const newErrors = { ...prev };
                         Object.keys(prev).forEach((key) => {
@@ -415,7 +481,7 @@ export default function RecommendedFields() {
                 key={index}
                 className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
-                <div>
+                <div className="flex flex-col lg:flex-row gap-2">
                   <Input
                     name={`contributors[${index}].name`}
                     placeholder="Full Name"
@@ -426,6 +492,22 @@ export default function RecommendedFields() {
                       {getError(`contributors.${index}.name`)}
                     </p>
                   )}
+
+                  <Select
+                    name={`contributors[${index}].nameType`}
+                    defaultValue={savedContributor.nameType}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Name Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nameTypeOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Select
@@ -460,15 +542,34 @@ export default function RecommendedFields() {
                     name={`contributors[${index}].affiliation`}
                     defaultValue={savedContributor.affiliation}
                   />
+                </div>
+                <div className="grid lg:grid-cols-3 gap-2">
                   <Input
-                    placeholder="Lang"
-                    className="w-[80px]"
-                    maxLength={3}
-                    name={`contributors[${index}].lang`}
-                    defaultValue={savedContributor.lang}
+                    placeholder="Affiliation Identifier"
+                    name={`contributors[${index}].affiliationIdentifier`}
+                    defaultValue={savedContributor.affiliationIdentifier}
+                  />
+                  <Select
+                    name={`contributors[${index}].affiliationIdentifierScheme`}
+                    defaultValue={savedContributor.affiliationIdentifierScheme}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Affiliation ID Scheme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["ROR", "GRID", "ISNI", "Other"].map((scheme) => (
+                        <SelectItem key={scheme} value={scheme}>
+                          {scheme}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    placeholder="Affiliation Scheme URI (e.g., https://ror.org)"
+                    name={`contributors[${index}].affiliationSchemeURI`}
+                    defaultValue={savedContributor.affiliationSchemeURI}
                   />
                 </div>
-
                 <div className="grid lg:grid-cols-2 gap-2">
                   <Input
                     placeholder="Name Identifier"
@@ -622,22 +723,16 @@ export default function RecommendedFields() {
                 key={index}
                 className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
-                <div>
-                  <Input
-                    placeholder="Related Identifier (e.g., DOI, ISBN)"
-                    name={`relatedIdentifiers[${index}].relatedIdentifier`}
-                    defaultValue={savedIdentifier.relatedIdentifier}
-                  />
-                  {getError(
-                    `relatedIdentifiers.${index}.relatedIdentifier`
-                  ) && (
-                    <p className="text-destructive text-xs mt-1">
-                      {getError(
-                        `relatedIdentifiers.${index}.relatedIdentifier`
-                      )}
-                    </p>
-                  )}
-                </div>
+                <Input
+                  placeholder="Related Identifier (e.g., DOI, ISBN)"
+                  name={`relatedIdentifiers[${index}].relatedIdentifier`}
+                  defaultValue={savedIdentifier.relatedIdentifier}
+                />
+                {getError(`relatedIdentifiers.${index}.relatedIdentifier`) && (
+                  <p className="text-destructive text-xs mt-1">
+                    {getError(`relatedIdentifiers.${index}.relatedIdentifier`)}
+                  </p>
+                )}
 
                 <div className="flex flex-wrap gap-2">
                   <Select
@@ -673,17 +768,44 @@ export default function RecommendedFields() {
                   </Select>
                 </div>
 
-                <Input
-                  placeholder="Optional: Related Metadata Scheme"
-                  name={`relatedIdentifiers[${index}].relatedMetadataScheme`}
-                  defaultValue={savedIdentifier.relatedMetadataScheme}
-                />
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    placeholder="Optional: Related Metadata Scheme"
+                    name={`relatedIdentifiers[${index}].relatedMetadataScheme`}
+                    defaultValue={savedIdentifier.relatedMetadataScheme}
+                    className="min-w-[200px]"
+                  />
 
-                <Input
-                  placeholder="Optional: Scheme Type (e.g. XSD)"
-                  name={`relatedIdentifiers[${index}].schemeType`}
-                  defaultValue={savedIdentifier.schemeType}
-                />
+                  <Input
+                    placeholder="Optional: Scheme URI"
+                    name={`relatedIdentifiers[${index}].schemeURI`}
+                    defaultValue={savedIdentifier.schemeURI}
+                    className="min-w-[200px]"
+                  />
+
+                  <Input
+                    placeholder="Optional: Scheme Type (e.g. XSD)"
+                    name={`relatedIdentifiers[${index}].schemeType`}
+                    defaultValue={savedIdentifier.schemeType}
+                    className="min-w-[200px]"
+                  />
+
+                  <Select
+                    name={`relatedIdentifiers[${index}].resourceTypeGeneral`}
+                    defaultValue={savedIdentifier.resourceTypeGeneral}
+                  >
+                    <SelectTrigger className="min-w-[200px]">
+                      <SelectValue placeholder="Resource Type General" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {resourceTypeGeneralOptions.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {index > 0 && (
                   <Button
@@ -691,7 +813,6 @@ export default function RecommendedFields() {
                     size="icon"
                     onClick={() => {
                       setRelatedIdentifierCount((prev: number) => prev - 1);
-                      // Clear errors for removed identifier
                       setErrors((prev) => {
                         const newErrors = { ...prev };
                         Object.keys(prev).forEach((key) => {
@@ -702,6 +823,7 @@ export default function RecommendedFields() {
                         return newErrors;
                       });
                     }}
+                    className="absolute top-2 right-2"
                   >
                     <XIcon className="w-4 h-4" />
                   </Button>
@@ -716,8 +838,7 @@ export default function RecommendedFields() {
               setRelatedIdentifierCount((prev: number) => prev + 1)
             }
           >
-            <PlusIcon className="mr-2 w-4 h-4" />
-            Add Related Identifier
+            <PlusIcon className="mr-2 w-4 h-4" /> Add Related Identifier
           </Button>
         </section>
 
@@ -805,6 +926,7 @@ export default function RecommendedFields() {
         </section>
 
         {/* Geo Locations */}
+        {/* TODO: InPolygonPoint is missing : https://datacite-metadata-schema.readthedocs.io/en/4.6/properties/geolocation/#inpolygonpoint */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Geo Locations</h2>
           {Array.from({ length: geoLocationCount }).map((_, index) => {
@@ -867,7 +989,7 @@ export default function RecommendedFields() {
                   />
                 </div>
 
-                {/* Polygon */}
+                {/* Polygon Points*/}
                 <div className="space-y-2">
                   <p className="font-medium">Polygon Points</p>
                   {Array.from({ length: pointCount }).map((_, pIndex) => (
@@ -887,7 +1009,8 @@ export default function RecommendedFields() {
                         name={`geoLocations[${index}].polygon[${pIndex}].long`}
                         defaultValue={savedGeo.polygon?.[pIndex]?.long}
                       />
-                      {pIndex > 0 && (
+                      {/*TODO: Should this button add / remove single set or set of 4 points? */}
+                      {pIndex >= 4 && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -901,7 +1024,7 @@ export default function RecommendedFields() {
                       )}
                     </div>
                   ))}
-
+                  {/*TODO: Should this button add / remove single set or set of 4 points? */}
                   <Button
                     variant="outline"
                     size="sm"
@@ -947,7 +1070,7 @@ export default function RecommendedFields() {
             onClick={() => {
               setGeoLocationCount((prev: number) => prev + 1);
               // Add initial polygon count for new geoLocation
-              setPolygonPointCounts((prev) => [...prev, 1]);
+              setPolygonPointCounts((prev) => [...prev, 4]);
             }}
           >
             <PlusIcon className="mr-2 w-4 h-4" />

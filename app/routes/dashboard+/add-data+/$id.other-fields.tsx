@@ -36,7 +36,15 @@ const alternateIdentifierTypeOptions = [
   "w3id",
 ];
 
-const funderIdentifierTypes = ["EU", "DFG", "FWF", "Other"];
+const funderIdentifierTypes = [
+  "Crossref Funder ID",
+  "GRID",
+  "ISNI",
+  "ROR",
+  "Other",
+] as const;
+
+export type FunderIdentifierType = (typeof funderIdentifierTypes)[number];
 
 export default function OtherFields() {
   const { id } = useParams<{ id: string }>();
@@ -48,7 +56,6 @@ export default function OtherFields() {
   const navigate = useNavigate();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
-  // Initialize counts with saved data
   const [alternateIdCount, setAlternateIdCount] = useState(
     saved.alternateIdentifiers?.length || 1
   );
@@ -85,15 +92,15 @@ export default function OtherFields() {
       version: formData.get("version") as string,
       rights: Array.from({ length: rightsCount }).map((_, i) => ({
         rights: formData.get(`rights[${i}].rights`) as string,
-        rightsUri: formData.get(`rights[${i}].rightsUri`) as string,
-        rightsLang: formData.get(`rights[${i}].rightsLang`) as string,
-        rightsSchemeUri: formData.get(`rights[${i}].rightsSchemeUri`) as string,
-        rightsIdentifierScheme: formData.get(
-          `rights[${i}].rightsIdentifierScheme`
-        ) as string,
+        rightsURI: formData.get(`rights[${i}].rightsURI`) as string,
         rightsIdentifier: formData.get(
           `rights[${i}].rightsIdentifier`
         ) as string,
+        rightsIdentifierScheme: formData.get(
+          `rights[${i}].rightsIdentifierScheme`
+        ) as string,
+        schemeURI: formData.get(`rights[${i}].schemeURI`) as string,
+        lang: formData.get(`rights[${i}].lang`) as string,
       })),
       fundingReferences: Array.from({ length: fundingRefCount }).map(
         (_, i) => ({
@@ -105,13 +112,14 @@ export default function OtherFields() {
           ) as string,
           funderIdentifierType: formData.get(
             `fundingReferences[${i}].funderIdentifierType`
-          ) as string,
+          ) as FunderIdentifierType,
+          schemeURI: formData.get(
+            `fundingReferences[${i}].schemeURI`
+          ) as string, // NEW: was missing
           awardNumber: formData.get(
             `fundingReferences[${i}].awardNumber`
           ) as string,
-          awardNumberUri: formData.get(
-            `fundingReferences[${i}].awardNumberUri`
-          ) as string,
+          awardURI: formData.get(`fundingReferences[${i}].awardURI`) as string,
           awardTitle: formData.get(
             `fundingReferences[${i}].awardTitle`
           ) as string,
@@ -148,7 +156,7 @@ export default function OtherFields() {
   };
 
   const handleSaveAndBack = () => {
-    // write proper action later for now it should save everything to the storage
+    // TODO: write proper action later for now it should save everything to the storage
     // even though the user went back
     if (validateAndSave()) {
       navigate(`/dashboard/add-data/${id}/recommended-fields`);
@@ -356,7 +364,7 @@ export default function OtherFields() {
             <PlusIcon className="mr-2 h-4 w-4" /> Add Format
           </Button>
         </section>
-
+        {/* Version */}
         <section>
           <h2 className="mb-4 text-xl font-semibold">Version</h2>
           <Input
@@ -386,7 +394,7 @@ export default function OtherFields() {
                     <Input
                       name={`rights[${index}].rights`}
                       defaultValue={savedRight.rights}
-                      placeholder="Rights statement"
+                      placeholder="Rights statement (e.g., Creative Commons Attribution 4.0 International)"
                     />
                     {getError(`rights.${index}.rights`) && (
                       <p className="mt-1 text-xs text-destructive">
@@ -394,39 +402,37 @@ export default function OtherFields() {
                       </p>
                     )}
                   </div>
-
                   <div>
                     <Input
-                      name={`rights[${index}].rightsLang`}
-                      defaultValue={savedRight.rightsLang}
+                      name={`rights[${index}].lang`}
+                      defaultValue={savedRight.lang}
                       placeholder="Language (e.g. en)"
                       maxLength={3}
                     />
-                    {getError(`rights.${index}.rightsLang`) && (
+                    {getError(`rights.${index}.lang`) && (
                       <p className="mt-1 text-xs text-destructive">
-                        {getError(`rights.${index}.rightsLang`)}
+                        {getError(`rights.${index}.lang`)}
                       </p>
                     )}
                   </div>
-
                   <div>
                     <Input
-                      name={`rights[${index}].rightsSchemeUri`}
-                      defaultValue={savedRight.rightsSchemeUri}
-                      placeholder="Scheme URI"
+                      type="url"
+                      name={`rights[${index}].schemeURI`}
+                      defaultValue={savedRight.schemeURI}
+                      placeholder="Scheme URI (e.g., https://spdx.org/licenses/)"
                     />
-                    {getError(`rights.${index}.rightsSchemeUri`) && (
+                    {getError(`rights.${index}.schemeURI`) && (
                       <p className="mt-1 text-xs text-destructive">
-                        {getError(`rights.${index}.rightsSchemeUri`)}
+                        {getError(`rights.${index}.schemeURI`)}
                       </p>
                     )}
                   </div>
-
                   <div>
                     <Input
                       name={`rights[${index}].rightsIdentifierScheme`}
                       defaultValue={savedRight.rightsIdentifierScheme}
-                      placeholder="Identifier Scheme"
+                      placeholder="Identifier Scheme (e.g., SPDX)"
                     />
                     {getError(`rights.${index}.rightsIdentifierScheme`) && (
                       <p className="mt-1 text-xs text-destructive">
@@ -434,12 +440,11 @@ export default function OtherFields() {
                       </p>
                     )}
                   </div>
-
                   <div>
                     <Input
                       name={`rights[${index}].rightsIdentifier`}
                       defaultValue={savedRight.rightsIdentifier}
-                      placeholder="Identifier (e.g. CC-BY-4.0)"
+                      placeholder="Identifier (e.g., CC-BY-4.0)"
                     />
                     {getError(`rights.${index}.rightsIdentifier`) && (
                       <p className="mt-1 text-xs text-destructive">
@@ -447,16 +452,16 @@ export default function OtherFields() {
                       </p>
                     )}
                   </div>
-
                   <div>
                     <Input
-                      name={`rights[${index}].rightsUri`}
-                      defaultValue={savedRight.rightsUri}
-                      placeholder="Rights URI"
+                      type="url"
+                      name={`rights[${index}].rightsURI`}
+                      defaultValue={savedRight.rightsURI}
+                      placeholder="Rights URI (e.g., https://creativecommons.org/licenses/by/4.0/)"
                     />
-                    {getError(`rights.${index}.rightsUri`) && (
+                    {getError(`rights.${index}.rightsURI`) && (
                       <p className="mt-1 text-xs text-destructive">
-                        {getError(`rights.${index}.rightsUri`)}
+                        {getError(`rights.${index}.rightsURI`)}
                       </p>
                     )}
                   </div>
@@ -504,10 +509,11 @@ export default function OtherFields() {
                 key={index}
                 className="relative mb-4 space-y-2 rounded-lg border p-4"
               >
+                {/* 19.1 funderName (required) */}
                 <Input
                   name={`fundingReferences[${index}].funderName`}
                   defaultValue={savedFunding.funderName}
-                  placeholder="Funder Name"
+                  placeholder="Funder Name (e.g., European Commission)"
                 />
                 {getError(`fundingReferences.${index}.funderName`) && (
                   <p className="mt-1 text-xs text-destructive">
@@ -515,24 +521,20 @@ export default function OtherFields() {
                   </p>
                 )}
 
-                <Input
-                  name={`fundingReferences[${index}].funderIdentifier`}
-                  defaultValue={savedFunding.funderIdentifier}
-                  placeholder="Funder Identifier"
-                />
-                {getError(`fundingReferences.${index}.funderIdentifier`) && (
-                  <p className="mt-1 text-xs text-destructive">
-                    {getError(`fundingReferences.${index}.funderIdentifier`)}
-                  </p>
-                )}
+                {/* 19.2 funderIdentifier (+ type + schemeURI) */}
+                <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                  <Input
+                    name={`fundingReferences[${index}].funderIdentifier`}
+                    defaultValue={savedFunding.funderIdentifier}
+                    placeholder="Funder Identifier"
+                  />
 
-                <div>
                   <Select
                     name={`fundingReferences[${index}].funderIdentifierType`}
                     defaultValue={savedFunding.funderIdentifierType}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="funderIdentifierType" />
+                      <SelectValue placeholder="Funder Identifier Type" />
                     </SelectTrigger>
                     <SelectContent>
                       {funderIdentifierTypes.map((type) => (
@@ -542,56 +544,64 @@ export default function OtherFields() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {getError(
-                    `fundingReferences.${index}.funderIdentifierType`
-                  ) && (
-                    <p className="mt-1 text-xs text-destructive">
-                      {getError(
-                        `fundingReferences.${index}.funderIdentifierType`
-                      )}
-                    </p>
-                  )}
+
+                  <Input
+                    type="url"
+                    name={`fundingReferences[${index}].schemeURI`}
+                    defaultValue={savedFunding.schemeURI}
+                    placeholder="Scheme URI"
+                  />
                 </div>
-
-                <Input
-                  name={`fundingReferences[${index}].awardNumber`}
-                  defaultValue={savedFunding.awardNumber}
-                  placeholder="Award Number"
-                />
-                {getError(`fundingReferences.${index}.awardNumber`) && (
+                {(getError(`fundingReferences.${index}.funderIdentifierType`) ||
+                  getError(`fundingReferences.${index}.schemeURI`)) && (
                   <p className="mt-1 text-xs text-destructive">
-                    {getError(`fundingReferences.${index}.awardNumber`)}
-                  </p>
-                )}
-                <Input
-                  name={`fundingReferences[${index}].awardNumberUri`}
-                  defaultValue={savedFunding.awardNumberUri}
-                  placeholder="Award Uri"
-                />
-                {getError(`fundingReferences.${index}.awardNumberUri`) && (
-                  <p className="mt-1 text-xs text-destructive">
-                    {getError(`fundingReferences.${index}.awardNumberUri`)}
-                  </p>
-                )}
-                <Input
-                  name={`fundingReferences[${index}].awardTitle`}
-                  defaultValue={savedFunding.awardTitle}
-                  placeholder="Award Title"
-                />
-                {getError(`fundingReferences.${index}.awardTitle`) && (
-                  <p className="mt-1 text-xs text-destructive">
-                    {getError(`fundingReferences.${index}.awardTitle`)}
+                    {getError(
+                      `fundingReferences.${index}.funderIdentifierType`
+                    ) || getError(`fundingReferences.${index}.schemeURI`)}
                   </p>
                 )}
 
-                <Input
-                  name={`fundingReferences[${index}].awardTitleLang`}
-                  defaultValue={savedFunding.awardTitleLang}
-                  placeholder="Lang"
-                />
-                {getError(`fundingReferences.${index}.awardTitleLang`) && (
+                {/* 19.3 awardNumber (+ awardURI) */}
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <Input
+                    name={`fundingReferences[${index}].awardNumber`}
+                    defaultValue={savedFunding.awardNumber}
+                    placeholder="Award Number (e.g., 282625)"
+                  />
+                  <Input
+                    type="url"
+                    name={`fundingReferences[${index}].awardURI`}
+                    defaultValue={savedFunding.awardURI}
+                    placeholder="Award URI"
+                  />
+                </div>
+                {(getError(`fundingReferences.${index}.awardNumber`) ||
+                  getError(`fundingReferences.${index}.awardURI`)) && (
                   <p className="mt-1 text-xs text-destructive">
-                    {getError(`fundingReferences.${index}.awardTitleLang`)}
+                    {getError(`fundingReferences.${index}.awardNumber`) ||
+                      getError(`fundingReferences.${index}.awardURI`)}
+                  </p>
+                )}
+
+                {/* 19.4 awardTitle (+ xml:lang) */}
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                  <Input
+                    name={`fundingReferences[${index}].awardTitle`}
+                    defaultValue={savedFunding.awardTitle}
+                    placeholder="Award Title"
+                  />
+                  <Input
+                    name={`fundingReferences[${index}].awardTitleLang`}
+                    defaultValue={savedFunding.awardTitleLang}
+                    placeholder="Lang (e.g., en)"
+                    maxLength={3}
+                  />
+                </div>
+                {(getError(`fundingReferences.${index}.awardTitle`) ||
+                  getError(`fundingReferences.${index}.awardTitleLang`)) && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {getError(`fundingReferences.${index}.awardTitle`) ||
+                      getError(`fundingReferences.${index}.awardTitleLang`)}
                   </p>
                 )}
 
@@ -602,7 +612,6 @@ export default function OtherFields() {
                     className="absolute top-2 right-2"
                     onClick={() => {
                       setFundingRefCount((prev: number) => prev - 1);
-                      // Clear errors for removed item
                       setErrors((prev) => {
                         const newErrors = { ...prev };
                         Object.keys(prev).forEach((key) => {

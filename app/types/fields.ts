@@ -1,4 +1,6 @@
 import { z } from "zod";
+
+// Base types
 export type Contributor = {
   name: string;
   type: string;
@@ -10,12 +12,14 @@ export type Contributor = {
   affiliation?: string;
   lang?: string;
 };
+
 export type Subject = {
   subject: string;
-  scheme: string;
-  schemeURI: string;
-  lang: string;
-  valueURI: string;
+  subjectScheme?: string;
+  schemeURI?: string;
+  lang?: string;
+  valueURI?: string;
+  classificationCode?: string;
 };
 
 export type DateEntry = {
@@ -29,29 +33,36 @@ export type RelatedIdentifier = {
   relatedIdentifierType: string;
   relationType: string;
   relatedMetadataScheme?: string;
+  schemeURI?: string;
   schemeType?: string;
+  resourceTypeGeneral?: string;
 };
 
 export type Description = {
   description: string;
   lang?: string;
-  descriptionType?: string;
+  descriptionType: string;
 };
 
 export type GeoLocation = {
-    place: string
-    point : { lat:string, long: string}
-    box: { southLat: string, westLong: string, northLat: string, eastLong: string }
-    polygon?: { lat: string; long: string }[]
-}
+  place?: string;
+  point?: { lat: string; long: string };
+  box?: {
+    southLat: string;
+    westLong: string;
+    northLat: string;
+    eastLong: string;
+  };
+  polygon?: { lat: string; long: string }[];
+};
 
 export type RecommendedFields = {
-  subjects: Subject[];
-  contributors: Contributor[];
-  dates: DateEntry[];
-  relatedIdentifiers: RelatedIdentifier[];
-  descriptions: Description[];
-  geoLocations: GeoLocation[]
+  subjects?: Subject[];
+  contributors?: Contributor[];
+  dates?: DateEntry[];
+  relatedIdentifiers?: RelatedIdentifier[];
+  descriptions?: Description[];
+  geoLocations?: GeoLocation[];
 };
 
 export type FormDataDraft = {
@@ -60,113 +71,295 @@ export type FormDataDraft = {
   other?: any;
 };
 
+const funderIdentifierTypes = [
+  "Crossref Funder ID",
+  "GRID",
+  "ISNI",
+  "ROR",
+  "Other",
+] as const;
 
+// Helper validation functions
+const yearPattern = /^[\d]{4}$/;
+// const longitudeRange = z.number().min(-180).max(180);
+// const latitudeRange = z.number().min(-90).max(90);
+const nonEmptyString = z.string().min(1);
+const xmlLangPattern = /^[a-zA-Z]{1,8}(-[a-zA-Z0-9]{1,8})*$/; // XML language code pattern
 
+// Identifier Schema
+const IdentifierSchema = z.object({
+  identifier: z.string().optional(),
+  identifierType: z.string().optional(),
+});
 
+// Title Schema - matches XSD requirements
 const TitleSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  lang: z.string().max(3).optional(),
+  title: nonEmptyString.describe("Title is required"),
+  lang: z
+    .string()
+    .regex(xmlLangPattern)
+    .optional()
+    .describe("Must be valid XML language code"),
   titleType: z.string().optional(),
 });
 
-const CreatorSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  nameType: z.string().optional(),
-  givenName: z.string().optional(),
-  familyName: z.string().optional(),
-  nameIdentifier: z.string().optional(),
-  nameIdentifierScheme: z.string().optional(),
-  schemeURI: z.string().optional(),
-  affiliation: z.string().optional(),
-  lang: z.string().max(3).optional(),
-});
+// Creator Schema - matches XSD requirements
+const CreatorSchema = z
+  .object({
+    name: nonEmptyString.describe("Creator name is required"),
+    nameType: z.string().optional(),
+    givenName: z.string().optional(),
+    familyName: z.string().optional(),
+    nameIdentifier: z.string().optional(),
+    nameIdentifierScheme: z
+      .string()
+      .optional()
+      .describe("Required if nameIdentifier is provided"),
+    schemeURI: z.url().optional(),
+    affiliation: z.string().optional(),
+    lang: z.string().regex(xmlLangPattern).optional(),
+  })
+  .refine(
+    (data) => {
+      // If nameIdentifier is provided, nameIdentifierScheme is required
+      if (data.nameIdentifier && !data.nameIdentifierScheme) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        "nameIdentifierScheme is required when nameIdentifier is provided",
+      path: ["nameIdentifierScheme"],
+    }
+  );
 
-const PublisherSchema = z.object({
-  name: z.string().min(1, "Publisher is required"),
-  lang: z.string().max(3).optional(),
-});
+// Publisher Schema
+const PublisherSchema = z
+  .object({
+    name: nonEmptyString.describe("Publisher is required"),
+    publisherIdentifier: z.string().optional(),
+    publisherIdentifierScheme: z.string().optional(),
+    schemeURI: z.url().optional(),
+    lang: z.string().regex(xmlLangPattern).optional(),
+  })
+  .refine(
+    (data) => !data.publisherIdentifier || !!data.publisherIdentifierScheme,
+    {
+      message:
+        "publisherIdentifierScheme is required when publisherIdentifier is provided.",
+      path: ["publisherIdentifierScheme"],
+    }
+  );
 
+// Resource Type Schema - matches XSD requirements
 const ResourceTypeSchema = z.object({
-  type: z.string().min(1, "Resource type is required"),
-  general: z.string().min(1, "Resource type general is required"),
+  type: z.string().describe("Resource type description"),
+  general: nonEmptyString.describe("Resource type general is required"), // resourceTypeGeneral is required
 });
 
+// Mandatory Fields Schema
 export const MandatoryFieldsSchema = z.object({
+  identifier: IdentifierSchema,
   titles: z.array(TitleSchema).min(1, "At least one title is required"),
   creators: z.array(CreatorSchema).min(1, "At least one creator is required"),
   publisher: PublisherSchema,
-  publicationYear: z.string().regex(/^\d{4}$/, "Invalid year format (YYYY)"),
+  publicationYear: z.string().regex(yearPattern, "Invalid year format (YYYY)"),
   resourceType: ResourceTypeSchema,
 });
 
 export type MandatoryFieldsType = z.infer<typeof MandatoryFieldsSchema>;
 
-
-
+// Subject Schema
 export const SubjectSchema = z.object({
-  subject: z.string().min(1, "Subject is required"),
-  scheme: z.string().optional(),
-  schemeURI: z.string().optional(),
-  lang: z.string().max(3).optional(),
-  valueURI: z.string().optional(),
+  subject: nonEmptyString.describe("Subject is required"),
+  subjectScheme: z.string().optional(),
+  schemeURI: z.url().optional(),
+  valueURI: z.url().optional(),
+  classificationCode: z.string().optional(),
+  lang: z.string().regex(xmlLangPattern).optional(),
 });
 
-export const ContributorSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  type: z.string().optional(),
-  givenName: z.string().optional(),
-  familyName: z.string().optional(),
-  nameIdentifier: z.string().optional(),
-  nameIdentifierScheme: z.string().optional(),
-  schemeURI: z.string().optional(),
-  affiliation: z.string().optional(),
-  lang: z.string().max(3).optional(),
-});
+// Contributor Schema
+export const ContributorSchema = z
+  .object({
+    name: nonEmptyString.describe("Contributor name is required"),
+    type: nonEmptyString.describe("Contributor type is required"),
+    nameType: z.string().optional(),
+    // Optional person-name details
+    givenName: z.string().optional(),
+    familyName: z.string().optional(),
 
+    // Name identifier
+    nameIdentifier: z.string().optional(),
+    nameIdentifierScheme: z.string().optional(),
+    schemeURI: z.url().optional(), // URI for nameIdentifier scheme
+
+    // Affiliation + identifiers
+    affiliation: z.string().optional(),
+    affiliationIdentifier: z.string().optional(),
+    affiliationIdentifierScheme: z.string().optional(),
+    affiliationSchemeURI: z.url().optional(),
+
+    // Removed: lang
+  })
+  .refine(
+    (data) => {
+      // If nameIdentifier is provided, nameIdentifierScheme is required
+      if (data.nameIdentifier && !data.nameIdentifierScheme) return false;
+      return true;
+    },
+    {
+      message:
+        "nameIdentifierScheme is required when nameIdentifier is provided",
+      path: ["nameIdentifierScheme"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If affiliationIdentifier is provided, affiliationIdentifierScheme is required
+      if (data.affiliationIdentifier && !data.affiliationIdentifierScheme)
+        return false;
+      return true;
+    },
+    {
+      message:
+        "affiliationIdentifierScheme is required when affiliationIdentifier is provided",
+      path: ["affiliationIdentifierScheme"],
+    }
+  );
+
+// Date Entry Schema - updated with XSD requirements
 export const DateEntrySchema = z.object({
-  date: z.string().min(1, "Date is required"),
-  dateType: z.string().optional(),
+  date: nonEmptyString.describe("Date is required"),
+  dateType: nonEmptyString.describe("Date type is required"),
   dateInformation: z.string().optional(),
 });
 
-export const RelatedIdentifierSchema = z.object({
-  relatedIdentifier: z.string().min(1, "Identifier is required"),
-  relatedIdentifierType: z.string().optional(),
-  relationType: z.string().optional(),
-  relatedMetadataScheme: z.string().optional(),
-  schemeType: z.string().optional(),
-});
+export const RelatedIdentifierSchema = z
+  .object({
+    relatedIdentifier: nonEmptyString.describe(
+      "Related identifier is required"
+    ),
+    relatedIdentifierType: nonEmptyString.describe(
+      "Related identifier type is required"
+    ),
+    relationType: nonEmptyString.describe("Relation type is required"),
+    relatedMetadataScheme: z.string().optional(),
+    schemeURI: z.url().optional(),
+    schemeType: z.string().optional(),
+    resourceTypeGeneral: z.string().optional(),
+  })
+  .refine(
+    (data) =>
+      !data.relatedMetadataScheme ||
+      data.relationType === "HasMetadata" ||
+      data.relationType === "IsMetadataFor",
+    {
+      path: ["relatedMetadataScheme"],
+      message:
+        "relatedMetadataScheme is only allowed when relationType is HasMetadata or IsMetadataFor",
+    }
+  )
+  .refine(
+    (data) =>
+      !data.schemeURI ||
+      data.relationType === "HasMetadata" ||
+      data.relationType === "IsMetadataFor",
+    {
+      path: ["schemeURI"],
+      message:
+        "schemeURI is only allowed when relationType is HasMetadata or IsMetadataFor",
+    }
+  )
+  .refine(
+    (data) =>
+      !data.schemeType ||
+      data.relationType === "HasMetadata" ||
+      data.relationType === "IsMetadataFor",
+    {
+      path: ["schemeType"],
+      message:
+        "schemeType is only allowed when relationType is HasMetadata or IsMetadataFor",
+    }
+  );
 
+// Description Schema - updated with XSD requirements
 export const DescriptionSchema = z.object({
-  description: z.string().min(1, "Description is required"),
-  descriptionType: z.string().optional(),
-  lang: z.string().max(3).optional(),
+  description: nonEmptyString.describe("Description is required"),
+  descriptionType: nonEmptyString.describe("Description type is required"), // Required in XSD
+  lang: z.string().regex(xmlLangPattern).optional(),
 });
 
-export const PointSchema = z.object({
-  lat: z.string().optional(),
-  long: z.string().optional(),
+// Geo Location Schemas - updated with proper validation
+const PointSchema = z.object({
+  lat: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= -90 && num <= 90;
+  }, "Latitude must be between -90 and 90"),
+  long: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= -180 && num <= 180;
+  }, "Longitude must be between -180 and 180"),
 });
 
-export const BoxSchema = z.object({
-  southLat: z.string().optional(),
-  westLong: z.string().optional(),
-  northLat: z.string().optional(),
-  eastLong: z.string().optional(),
+const BoxSchema = z
+  .object({
+    southLat: z.string().refine((val) => {
+      const num = parseFloat(val);
+      return !isNaN(num) && num >= -90 && num <= 90;
+    }, "South latitude must be between -90 and 90"),
+    westLong: z.string().refine((val) => {
+      const num = parseFloat(val);
+      return !isNaN(num) && num >= -180 && num <= 180;
+    }, "West longitude must be between -180 and 180"),
+    northLat: z.string().refine((val) => {
+      const num = parseFloat(val);
+      return !isNaN(num) && num >= -90 && num <= 90;
+    }, "North latitude must be between -90 and 90"),
+    eastLong: z.string().refine((val) => {
+      const num = parseFloat(val);
+      return !isNaN(num) && num >= -180 && num <= 180;
+    }, "East longitude must be between -180 and 180"),
+  })
+  .refine((data) => {
+    // Additional validation: south < north, west < east
+    const south = parseFloat(data.southLat);
+    const north = parseFloat(data.northLat);
+    const west = parseFloat(data.westLong);
+    const east = parseFloat(data.eastLong);
+
+    return south < north && west < east;
+  }, "Invalid box coordinates: south must be less than north, west must be less than east");
+
+const PolygonPointSchema = z.object({
+  lat: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= -90 && num <= 90;
+  }, "Latitude must be between -90 and 90"),
+  long: z.string().refine((val) => {
+    const num = parseFloat(val);
+    return !isNaN(num) && num >= -180 && num <= 180;
+  }, "Longitude must be between -180 and 180"),
 });
 
-export const PolygonPointSchema = z.object({
-  lat: z.string().optional(),
-  long: z.string().optional(),
-});
+export const GeoLocationSchema = z
+  .object({
+    place: z.string().optional(),
+    point: PointSchema.optional(),
+    box: BoxSchema.optional(),
+    polygon: z
+      .array(PolygonPointSchema)
+      .min(4)
+      .optional()
+      .describe("Polygon must have at least 4 points"),
+  })
+  .refine((data) => {
+    // At least one of place, point, box, or polygon must be provided
+    return data.place || data.point || data.box || data.polygon;
+  }, "At least one geo location element (place, point, box, or polygon) must be provided");
 
-export const GeoLocationSchema = z.object({
-  place: z.string().optional(),
-  point: PointSchema.optional(),
-  box: BoxSchema.optional(),
-  polygon: z.array(PolygonPointSchema).optional(),
-});
-
+// Recommended Fields Schema
 export const RecommendedFieldsSchema = z.object({
   subjects: z.array(SubjectSchema).optional(),
   contributors: z.array(ContributorSchema).optional(),
@@ -178,38 +371,71 @@ export const RecommendedFieldsSchema = z.object({
 
 export type RecommendedFieldsType = z.infer<typeof RecommendedFieldsSchema>;
 
-
-
+// Alternate Identifier Schema
 export const AlternateIdentifierSchema = z.object({
-  alternateIdentifier: z.string().min(1, "Identifier is required"),
-  alternateIdentifierType: z.string().min(1, "Identifier type is required"),
+  alternateIdentifier: nonEmptyString.describe(
+    "Alternate identifier is required"
+  ),
+  alternateIdentifierType: nonEmptyString.describe(
+    "Alternate identifier type is required"
+  ),
 });
 
+// Rights Schema
 export const RightsSchema = z.object({
-  rights: z.string().min(1, "Rights statement is required"),
-  rightsLang: z.string().optional(),
-  rightsSchemeUri: z.string().optional(),
-  rightsIdentifierScheme: z.string().optional(),
+  rights: nonEmptyString.describe("Rights statement is required"),
+  rightsURI: z.url().optional(),
   rightsIdentifier: z.string().optional(),
-  rightsUri: z.string().optional(),
+  rightsIdentifierScheme: z.string().optional(),
+  schemeURI: z.url().optional(),
+  lang: z.string().regex(xmlLangPattern).optional(),
 });
 
-export const FundingReferenceSchema = z.object({
-  funderName: z.string().min(1, "Funder name is required"),
-  funderIdentifier: z.string().optional(),
-  funderIdentifierType: z.string().optional(),
-  awardNumber: z.string().optional(),
-  awardNumberUri: z.string().optional(),
-  awardTitle: z.string().optional(),
-  awardTitleLang: z.string().optional(),
-});
+// Funding Reference Schema
+export const FundingReferenceSchema = z
+  .object({
+    funderName: nonEmptyString.describe("Funder name is required"),
 
+    // 19.2 funderIdentifier (+ type + schemeURI)
+    funderIdentifier: z.string().optional(),
+    funderIdentifierType: z
+      .enum(funderIdentifierTypes)
+      .optional()
+      .describe("Required if funderIdentifier is provided"),
+    schemeURI: z.url().optional(), // URI of the funder identifier scheme
+
+    // 19.3 awardNumber (+ awardURI)
+    awardNumber: z.string().optional(),
+    awardURI: z.url().optional(), // URL to the award/grant page
+
+    // 19.4 awardTitle (+ xml:lang)
+    awardTitle: z.string().optional(),
+    awardTitleLang: z.string().regex(xmlLangPattern).optional(),
+  })
+  // If funderIdentifier is provided, funderIdentifierType is required
+  .refine((d) => !d.funderIdentifier || !!d.funderIdentifierType, {
+    path: ["funderIdentifierType"],
+    message:
+      "funderIdentifierType is required when funderIdentifier is provided",
+  })
+  // schemeURI only makes sense when funderIdentifier is present
+  .refine((d) => !d.schemeURI || !!d.funderIdentifier, {
+    path: ["schemeURI"],
+    message: "schemeURI is only allowed when funderIdentifier is provided",
+  });
+
+// Other Fields Schema - updated validations
 export const OtherFieldsSchema = z.object({
-  language: z.string().min(1, "Language is required"),
+  language: z
+    .string()
+    .regex(xmlLangPattern)
+    .describe("Must be valid language code (IETF BCP 47, ISO 639-1)"),
   alternateIdentifiers: z.array(AlternateIdentifierSchema).optional(),
-  sizes: z.array(z.string().min(1, "Size is required")).optional(),
-  formats: z.array(z.string().min(1, "Format is required")).optional(),
-  version: z.string().min(1, "Version is required"),
+  sizes: z.array(nonEmptyString.describe("Size cannot be empty")).optional(),
+  formats: z
+    .array(nonEmptyString.describe("Format cannot be empty"))
+    .optional(),
+  version: z.string().optional(),
   rights: z.array(RightsSchema).optional(),
   fundingReferences: z.array(FundingReferenceSchema).optional(),
 });

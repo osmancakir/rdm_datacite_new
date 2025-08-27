@@ -91,6 +91,10 @@ export default function MandatoryFields() {
     const formData = new FormData(formRef.current!);
 
     return {
+      identifier: {
+        identifier: formData.get("identifier") as string,
+        identifierType: formData.get("identifierType") as string,
+      },
       titles: Array.from({ length: titleCount }).map((_, i) => ({
         title: formData.get(`titles[${i}].title`) as string,
         lang: formData.get(`titles[${i}].lang`) as string,
@@ -112,6 +116,13 @@ export default function MandatoryFields() {
       publisher: {
         name: formData.get("publisher.name") as string,
         lang: formData.get("publisher.lang") as string,
+        publisherIdentifier: formData.get(
+          "publisher.publisherIdentifier"
+        ) as string,
+        publisherIdentifierScheme: formData.get(
+          "publisher.publisherIdentifierScheme"
+        ) as string,
+        schemeURI: formData.get("publisher.schemeURI") as string,
       },
       publicationYear: formData.get("publicationYear") as string,
       resourceType: {
@@ -140,7 +151,7 @@ export default function MandatoryFields() {
       saveDraftStep(id, "mandatory", result.data);
       return true;
     } catch (err) {
-      console.error("Validation error:", err);
+      console.log("Validation error:", err);
       return false;
     }
   };
@@ -163,6 +174,33 @@ export default function MandatoryFields() {
         className="flex-1 space-y-12 pb-10"
         id="mandatory-form"
       >
+        {/* Identifier DOI */}
+        <section>
+          <h2 className="text-xl font-semibold mb-4">Identifier</h2>
+          <div className="flex flex-col lg:flex-row gap-2">
+            <Input
+              name="identifier"
+              placeholder="DOI will be assigned upon publication"
+              defaultValue={saved.identifier?.identifier || "To be assigned"}
+              className="flex-1"
+            />
+            <Select
+              name={`identifierType`}
+              defaultValue={saved.identifier?.identifierType || "DOI"}
+            >
+              <SelectTrigger className="w-full lg:w-[200px]">
+                <SelectValue placeholder="Identifier Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {["DOI"].map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
         {/* Titles */}
         <section>
           <h2 className="text-xl font-semibold mb-4">Titles</h2>
@@ -234,7 +272,7 @@ export default function MandatoryFields() {
             const savedCreator = saved.creators?.[index] || {};
             return (
               <div key={index} className="border rounded-lg p-4 mb-4 space-y-3">
-                <div>
+                <div className="flex flex-col lg:flex-row gap-2">
                   <Input
                     name={`creators[${index}].name`}
                     placeholder="Creator Name"
@@ -245,23 +283,22 @@ export default function MandatoryFields() {
                       {getError(`creators.${index}.name`)}
                     </p>
                   )}
+                  <Select
+                    name={`creators[${index}].nameType`}
+                    defaultValue={savedCreator.nameType}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Name Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {nameTypeOptions.map((opt) => (
+                        <SelectItem key={opt} value={opt}>
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <Select
-                  name={`creators[${index}].nameType`}
-                  defaultValue={savedCreator.nameType}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Name Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {nameTypeOptions.map((opt) => (
-                      <SelectItem key={opt} value={opt}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
 
                 <Input
                   name={`creators[${index}].givenName`}
@@ -345,7 +382,7 @@ export default function MandatoryFields() {
         <section>
           <h2 className="text-xl font-semibold mb-4">Publisher</h2>
           <div className="flex flex-wrap gap-2">
-            <div className="flex-1">
+            <div className="flex-1 min-w-[200px]">
               <Input
                 name="publisher.name"
                 placeholder="Publisher Name"
@@ -364,6 +401,26 @@ export default function MandatoryFields() {
               placeholder="Lang"
               name="publisher.lang"
               defaultValue={saved.publisher?.lang}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Input
+              className="flex-1 min-w-[200px]"
+              placeholder="Publisher Identifier"
+              name="publisher.publisherIdentifier"
+              defaultValue={saved.publisher?.publisherIdentifier}
+            />
+            <Input
+              className="flex-1 min-w-[200px]"
+              placeholder="Identifier Scheme"
+              name="publisher.publisherIdentifierScheme"
+              defaultValue={saved.publisher?.publisherIdentifierScheme}
+            />
+            <Input
+              className="flex-1 min-w-[200px]"
+              placeholder="Scheme URI"
+              name="publisher.schemeURI"
+              defaultValue={saved.publisher?.schemeURI}
             />
           </div>
         </section>

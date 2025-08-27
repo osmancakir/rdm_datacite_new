@@ -1,18 +1,24 @@
 import { type FormDataDraft } from "@/types/fields";
 
-function escape(str: string) {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
+  const escapeAttr = (v: string) =>
+    String(v)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+  const escapeText = (v: string) =>
+    String(v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/'/g, "&apos;");
 
 export function generateXml(form: FormDataDraft): string {
   if (!form?.mandatory) return "";
 
   const {
+    identifier = {},
     titles = [],
     creators = [],
     publisher,
@@ -21,54 +27,76 @@ export function generateXml(form: FormDataDraft): string {
   } = form.mandatory;
 
   const indent = (lvl: number) => "\t".repeat(lvl);
-  const el = (name: string, value: string, level = 1) =>
-    value ? `${indent(level)}<${name}>${escape(value)}</${name}>\n` : "";
+
+  const el = (name: string, value?: string | null, level = 1) =>
+    value ? `${indent(level)}<${name}>${escapeText(value)}</${name}>\n` : "";
+
   const elAttr = (
     name: string,
-    value: string,
-    attrs: Record<string, string>,
+    value: string | undefined | null,
+    attrs: Record<string, string | undefined | null> = {},
     level = 1
   ) => {
     if (!value) return "";
     const attrStr = Object.entries(attrs)
-      .map(([k, v]) => `${k}="${escape(v)}"`)
+      .filter(([, v]) => v !== undefined && v !== null && v !== "")
+      .map(([k, v]) => `${k}="${escapeAttr(String(v))}"`)
       .join(" ");
-    return `${indent(level)}<${name} ${attrStr}>${escape(value)}</${name}>\n`;
+    const open = attrStr ? `<${name} ${attrStr}>` : `<${name}>`;
+    return `${indent(level)}${open}${escapeText(value)}</${name}>\n`;
   };
 
-  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
-  xml += `<resource xmlns="https://schema.datacite.org/meta/kernel-4.3/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.datacite.org/meta/kernel-4.3/ https://schema.datacite.org/meta/kernel-4.3/metadata.xsd">\n`;
+  let xml = `<?xml version="1.ewew0" encoding="UTF-8"?>\n`;
+  xml += `<resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 https://schema.datacite.org/meta/kernel-4.6/metadata.xsd">\n`;
+
+  // MandatoryFields - Identifier
+  if (identifier?.identifier && identifier?.identifierType) {
+    xml += elAttr(
+      "identifier",
+      identifier.identifier,
+      { identifierType: identifier.identifierType },
+      1
+    );
+  }
 
   // MandatoryFields - Titles
   if (titles.length > 0) {
     xml += "\t<titles>\n";
     for (const t of titles) {
-      const attrs: Record<string, string> = {};
+      const attrs: Record<string, string | undefined> = {};
       if (t.lang) attrs["xml:lang"] = t.lang;
       if (t.titleType) attrs["titleType"] = t.titleType;
       xml += elAttr("title", t.title, attrs, 2);
     }
     xml += "\t</titles>\n";
   }
+
   // MandatoryFields - Creators
   if (creators.length > 0) {
     xml += "\t<creators>\n";
     for (const c of creators) {
       xml += "\t\t<creator>\n";
-      xml += elAttr("creatorName", c.name, { nameType: c.nameType }, 3);
+      xml += elAttr(
+        "creatorName",
+        c.name,
+        c.nameType ? { nameType: c.nameType } : {},
+        3
+      );
       xml += el("givenName", c.givenName, 3);
       xml += el("familyName", c.familyName, 3);
+
       if (c.nameIdentifier) {
-        const attrs: Record<string, string> = {};
+        const attrsNI: Record<string, string | undefined> = {};
         if (c.nameIdentifierScheme)
-          attrs["nameIdentifierScheme"] = c.nameIdentifierScheme;
-        if (c.schemeURI) attrs["schemeURI"] = c.schemeURI;
-        xml += elAttr("nameIdentifier", c.nameIdentifier, attrs, 3);
+          attrsNI["nameIdentifierScheme"] = c.nameIdentifierScheme;
+        if (c.schemeURI) attrsNI["schemeURI"] = c.schemeURI;
+        xml += elAttr("nameIdentifier", c.nameIdentifier, attrsNI, 3);
       }
+
       if (c.affiliation) {
-        const attrs: Record<string, string> = {};
-        if (c.lang) attrs["xml:lang"] = c.lang;
-        xml += elAttr("affiliation", c.affiliation, attrs, 3);
+        const attrsAff: Record<string, string | undefined> = {};
+        if (c.lang) attrsAff["xml:lang"] = c.lang;
+        xml += elAttr("affiliation", c.affiliation, attrsAff, 3);
       }
       xml += "\t\t</creator>\n";
     }
@@ -77,9 +105,16 @@ export function generateXml(form: FormDataDraft): string {
 
   // MandatoryFields - Publisher
   if (publisher?.name) {
-    const attrs: Record<string, string> = {};
-    if (publisher.lang) attrs["xml:lang"] = publisher.lang;
-    xml += elAttr("publisher", publisher.name, attrs, 1);
+    const attrsPub: Record<string, string | undefined> = {};
+    if (publisher.lang) attrsPub["xml:lang"] = publisher.lang;
+    if (publisher.publisherIdentifier)
+      attrsPub["publisherIdentifier"] = publisher.publisherIdentifier;
+    if (publisher.publisherIdentifierScheme)
+      attrsPub["publisherIdentifierScheme"] =
+        publisher.publisherIdentifierScheme;
+    if (publisher.schemeURI) attrsPub["schemeURI"] = publisher.schemeURI;
+    console.log("attrsPub:", attrsPub);
+    xml += elAttr("publisher", publisher.name, attrsPub, 1);
   }
 
   // MandatoryFields - Publication Year
@@ -87,10 +122,10 @@ export function generateXml(form: FormDataDraft): string {
 
   // MandatoryFields - Resource Type
   if (resourceType?.type || resourceType?.general) {
-    const attrs: Record<string, string> = {};
+    const attrsRT: Record<string, string | undefined> = {};
     if (resourceType.general)
-      attrs["resourceTypeGeneral"] = resourceType.general;
-    xml += elAttr("resourceType", resourceType.type, attrs, 1);
+      attrsRT["resourceTypeGeneral"] = resourceType.general;
+    xml += elAttr("resourceType", resourceType.type, attrsRT, 1);
   }
 
   // Recommended Fields - Subjects
@@ -98,97 +133,114 @@ export function generateXml(form: FormDataDraft): string {
   if (subjects.length > 0) {
     xml += "\t<subjects>\n";
     for (const s of subjects) {
-      const attrs: Record<string, string> = {};
-      if (s.scheme) attrs["subjectScheme"] = s.scheme;
-      if (s.schemeURI) attrs["schemeURI"] = s.schemeURI;
-      if (s.valueURI) attrs["valueURI"] = s.valueURI;
-      if (s.lang) attrs["xml:lang"] = s.lang;
-      xml += elAttr("subject", s.subject, attrs, 2);
+      const attrsSub: Record<string, string | undefined> = {};
+      if (s.subjectScheme) attrsSub["subjectScheme"] = s.subjectScheme;
+      if (s.schemeURI) attrsSub["schemeURI"] = s.schemeURI;
+      if (s.valueURI) attrsSub["valueURI"] = s.valueURI;
+      if (s.lang) attrsSub["xml:lang"] = s.lang;
+      if (s.classificationCode)
+        attrsSub["classificationCode"] = s.classificationCode;
+      xml += elAttr("subject", s.subject, attrsSub, 2);
     }
     xml += "\t</subjects>\n";
   }
 
   // Recommended fields - Contributors
-
   const contributors = form.recommended?.contributors ?? [];
   if (contributors.length > 0) {
     xml += "\t<contributors>\n";
     for (const c of contributors) {
-      xml += '\t\t<contributor contributorType="' + escape(c.type) + '">\n';
-      xml += el("contributorName", c.name, 3);
-      xml += el("givenName", c.givenName || "", 3);
-      xml += el("familyName", c.familyName || "", 3);
+      const typeAttr = c.type ? ` contributorType="${escapeAttr(c.type)}"` : "";
+      xml += `\t\t<contributor${typeAttr}>\n`;
+
+      // Optional: support nameType="Personal" | "Organizational" if present
+      const nameAttrs: Record<string, string | undefined> = {};
+      if ((c as any).nameType) nameAttrs["nameType"] = (c as any).nameType;
+      xml += elAttr("contributorName", c.name, nameAttrs, 3);
+
+      xml += el("givenName", c.givenName, 3);
+      xml += el("familyName", c.familyName, 3);
 
       if (c.nameIdentifier) {
-        const attrs: Record<string, string> = {};
+        const attrsNI: Record<string, string | undefined> = {};
         if (c.nameIdentifierScheme)
-          attrs["nameIdentifierScheme"] = c.nameIdentifierScheme;
-        if (c.schemeURI) attrs["schemeURI"] = c.schemeURI;
-        xml += elAttr("nameIdentifier", c.nameIdentifier, attrs, 3);
+          attrsNI["nameIdentifierScheme"] = c.nameIdentifierScheme;
+        if (c.schemeURI) attrsNI["schemeURI"] = c.schemeURI; // for nameIdentifier
+        xml += elAttr("nameIdentifier", c.nameIdentifier, attrsNI, 3);
       }
 
       if (c.affiliation) {
-        const attrs: Record<string, string> = {};
-        if (c.lang) attrs["xml:lang"] = c.lang;
-        xml += elAttr("affiliation", c.affiliation, attrs, 3);
+        const attrsAff: Record<string, string | undefined> = {};
+        if ((c as any).affiliationIdentifier)
+          attrsAff["affiliationIdentifier"] = (c as any).affiliationIdentifier;
+        if ((c as any).affiliationIdentifierScheme)
+          attrsAff["affiliationIdentifierScheme"] = (
+            c as any
+          ).affiliationIdentifierScheme;
+
+        // use a distinct property to avoid clashing with nameIdentifier.schemeURI
+        const affSchemeURI =
+          (c as any).affiliationSchemeURI ?? (c as any).affiliationSchemeUri;
+        if (affSchemeURI) attrsAff["schemeURI"] = affSchemeURI;
+
+        // NOTE: removed xml:lang on affiliation per your target
+        xml += elAttr("affiliation", c.affiliation, attrsAff, 3);
       }
+
       xml += "\t\t</contributor>\n";
     }
     xml += "\t</contributors>\n";
   }
 
   // Recommended Fields - Dates
-
   const dates = form.recommended?.dates ?? [];
   if (dates.length > 0) {
     xml += "\t<dates>\n";
     for (const d of dates) {
-      const attrs: Record<string, string> = {
+      const attrsD: Record<string, string | undefined> = {
         dateType: d.dateType,
       };
-      if (d.dateInformation) {
-        attrs["dateInformation"] = d.dateInformation;
-      }
-      xml += elAttr("date", d.date, attrs, 2);
+      if (d.dateInformation) attrsD["dateInformation"] = d.dateInformation;
+      xml += elAttr("date", d.date, attrsD, 2);
     }
     xml += "\t</dates>\n";
   }
 
   // Recommended Fields - Related Identifiers
-
   const related = form.recommended?.relatedIdentifiers ?? [];
   if (related.length > 0) {
     xml += "\t<relatedIdentifiers>\n";
     for (const r of related) {
-      const attrs: Record<string, string> = {
+      const attrsR: Record<string, string | undefined> = {
         relatedIdentifierType: r.relatedIdentifierType,
         relationType: r.relationType,
       };
+      if ((r as any).resourceTypeGeneral)
+        attrsR["resourceTypeGeneral"] = (r as any).resourceTypeGeneral;
       if (r.relatedMetadataScheme)
-        attrs["relatedMetadataScheme"] = r.relatedMetadataScheme;
-      if (r.schemeType) attrs["schemeType"] = r.schemeType;
+        attrsR["relatedMetadataScheme"] = r.relatedMetadataScheme;
+      if ((r as any).schemeURI) attrsR["schemeURI"] = (r as any).schemeURI;
+      if (r.schemeType) attrsR["schemeType"] = r.schemeType;
 
-      xml += elAttr("relatedIdentifier", r.relatedIdentifier, attrs, 2);
+      xml += elAttr("relatedIdentifier", r.relatedIdentifier, attrsR, 2);
     }
     xml += "\t</relatedIdentifiers>\n";
   }
 
-  // Recommended Fields - Decsriptions
-
+  // Recommended Fields - Descriptions
   const descriptions = form.recommended?.descriptions ?? [];
   if (descriptions.length > 0) {
     xml += "\t<descriptions>\n";
     for (const d of descriptions) {
-      const attrs: Record<string, string> = {};
-      if (d.descriptionType) attrs["descriptionType"] = d.descriptionType;
-      if (d.lang) attrs["xml:lang"] = d.lang;
-      xml += elAttr("description", d.description, attrs, 2);
+      const attrsDesc: Record<string, string | undefined> = {};
+      if (d.descriptionType) attrsDesc["descriptionType"] = d.descriptionType;
+      if (d.lang) attrsDesc["xml:lang"] = d.lang;
+      xml += elAttr("description", d.description, attrsDesc, 2);
     }
     xml += "\t</descriptions>\n";
   }
 
   // Recommended Fields - GeoLocations
-
   const geoLocations = form.recommended?.geoLocations ?? [];
   if (geoLocations.length > 0) {
     xml += "\t<geoLocations>\n";
@@ -222,6 +274,7 @@ export function generateXml(form: FormDataDraft): string {
         for (const pt of g.polygon) {
           if (pt.lat && pt.long) {
             xml += `\t\t\t\t<polygonPoint>\n`;
+            // DataCite order is pointLongitude then pointLatitude for polygonPoint
             xml += el("pointLongitude", pt.long, 5);
             xml += el("pointLatitude", pt.lat, 5);
             xml += `\t\t\t\t</polygonPoint>\n`;
@@ -245,10 +298,10 @@ export function generateXml(form: FormDataDraft): string {
   if (alternateIdentifiers.length > 0) {
     xml += "\t<alternateIdentifiers>\n";
     for (const a of alternateIdentifiers) {
-      const attrs: Record<string, string> = {
+      const attrsAI: Record<string, string | undefined> = {
         alternateIdentifierType: a.alternateIdentifierType,
       };
-      xml += elAttr("alternateIdentifier", a.alternateIdentifier, attrs, 2);
+      xml += elAttr("alternateIdentifier", a.alternateIdentifier, attrsAI, 2);
     }
     xml += "\t</alternateIdentifiers>\n";
   }
@@ -257,9 +310,7 @@ export function generateXml(form: FormDataDraft): string {
   const sizes = form.other?.sizes ?? [];
   if (sizes.length > 0) {
     xml += "\t<sizes>\n";
-    for (const s of sizes) {
-      xml += el("size", s, 2);
-    }
+    for (const s of sizes) xml += el("size", s, 2);
     xml += "\t</sizes>\n";
   }
 
@@ -267,31 +318,26 @@ export function generateXml(form: FormDataDraft): string {
   const formats = form.other?.formats ?? [];
   if (formats.length > 0) {
     xml += "\t<formats>\n";
-    for (const f of formats) {
-      xml += el("format", f, 2);
-    }
+    for (const f of formats) xml += el("format", f, 2);
     xml += "\t</formats>\n";
   }
 
   // OtherFields - Version
-  if (form.other?.version) {
-    xml += el("version", form.other.version, 1);
-  }
+  if (form.other?.version) xml += el("version", form.other.version, 1);
 
   // OtherFields - Rights
   const rights = form.other?.rights ?? [];
   if (rights.length > 0) {
     xml += "\t<rightsList>\n";
     for (const r of rights) {
-      const attrs: Record<string, string> = {};
-      if (r.rightsLang) attrs["xml:lang"] = r.rightsLang;
-      if (r.rightsSchemeUri) attrs["schemeURI"] = r.rightsSchemeUri;
+      const attrsRgt: Record<string, string | undefined> = {};
+      if (r.lang) attrsRgt["xml:lang"] = r.lang;
+      if (r.schemeURI) attrsRgt["schemeURI"] = r.schemeURI;
       if (r.rightsIdentifierScheme)
-        attrs["rightsIdentifierScheme"] = r.rightsIdentifierScheme;
-      if (r.rightsIdentifier) attrs["rightsIdentifier"] = r.rightsIdentifier;
-      if (r.rightsUri) attrs["rightsURI"] = r.rightsUri;
-
-      xml += elAttr("rights", r.rights, attrs, 2);
+        attrsRgt["rightsIdentifierScheme"] = r.rightsIdentifierScheme;
+      if (r.rightsIdentifier) attrsRgt["rightsIdentifier"] = r.rightsIdentifier;
+      if (r.rightsURI) attrsRgt["rightsURI"] = r.rightsURI;
+      xml += elAttr("rights", r.rights, attrsRgt, 2);
     }
     xml += "\t</rightsList>\n";
   }
@@ -308,24 +354,27 @@ export function generateXml(form: FormDataDraft): string {
 
       // Funder identifier
       if (f.funderIdentifier) {
-        const attrs: Record<string, string> = {};
+        const attrsFI: Record<string, string | undefined> = {};
         if (f.funderIdentifierType)
-          attrs["funderIdentifierType"] = f.funderIdentifierType;
-        xml += elAttr("funderIdentifier", f.funderIdentifier, attrs, 3);
+          attrsFI["funderIdentifierType"] = f.funderIdentifierType;
+        if (f.schemeURI) attrsFI["schemeURI"] = f.schemeURI;
+        xml += elAttr("funderIdentifier", f.funderIdentifier, attrsFI, 3);
       }
 
       // Award number
       if (f.awardNumber) {
-        const attrs: Record<string, string> = {};
-        if (f.awardNumberUri) attrs["awardURI"] = f.awardNumberUri;
-        xml += elAttr("awardNumber", f.awardNumber, attrs, 3);
+        const attrsAN: Record<string, string | undefined> = {};
+        // your model uses awardNumberUri, but DataCite uses awardURI (attribute) — you already mapped that
+        if (f.awardURI)
+          attrsAN["awardURI"] = f.awardURI;
+        xml += elAttr("awardNumber", f.awardNumber, attrsAN, 3);
       }
 
       // Award title
       if (f.awardTitle) {
-        const attrs: Record<string, string> = {};
-        if (f.awardTitleLang) attrs["xml:lang"] = f.awardTitleLang;
-        xml += elAttr("awardTitle", f.awardTitle, attrs, 3);
+        const attrsAT: Record<string, string | undefined> = {};
+        if (f.awardTitleLang) attrsAT["xml:lang"] = f.awardTitleLang;
+        xml += elAttr("awardTitle", f.awardTitle, attrsAT, 3);
       }
 
       xml += "\t\t</fundingReference>\n";
@@ -337,7 +386,7 @@ export function generateXml(form: FormDataDraft): string {
   return xml;
 }
 
-export function downloadXml(xmlOutput) {
+export function downloadXml(xmlOutput: string) {
   const blob = new Blob([xmlOutput], { type: "application/xml" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
