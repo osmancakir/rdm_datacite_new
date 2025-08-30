@@ -814,7 +814,7 @@ export const FundingReferenceSchema = z
 
     if (hasAnyOther && !d.funderName) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ['funderName'],
         message:
           'funderName is required when any funding reference fields are provided',
@@ -823,7 +823,7 @@ export const FundingReferenceSchema = z
 
     if (d.funderIdentifier && !d.funderIdentifierType) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ['funderIdentifierType'],
         message:
           'funderIdentifierType is required when funderIdentifier is provided',
@@ -832,7 +832,7 @@ export const FundingReferenceSchema = z
 
     if (d.funderIdentifierType && !d.funderIdentifier) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ['funderIdentifier'],
         message:
           'funderIdentifier is required when funderIdentifierType is provided',
