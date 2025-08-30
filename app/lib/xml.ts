@@ -1,18 +1,18 @@
 import { type FormDataDraft } from "@/types/fields";
 
-  const escapeAttr = (v: string) =>
-    String(v)
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+const escapeAttr = (v: string) =>
+  String(v)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 
-  const escapeText = (v: string) =>
-    String(v)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/'/g, "&apos;");
+const escapeText = (v: string) =>
+  String(v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&apos;");
 
 export function generateXml(form: FormDataDraft): string {
   if (!form?.mandatory) return "";
@@ -76,12 +76,12 @@ export function generateXml(form: FormDataDraft): string {
     xml += "\t<creators>\n";
     for (const c of creators) {
       xml += "\t\t<creator>\n";
-      xml += elAttr(
-        "creatorName",
-        c.name,
-        c.nameType ? { nameType: c.nameType } : {},
-        3
-      );
+
+      const attrsCN: Record<string, string | undefined> = {};
+      if (c.nameType) attrsCN["nameType"] = c.nameType;
+      if (c.lang) attrsCN["xml:lang"] = c.lang;
+
+      xml += elAttr("creatorName", c.name, attrsCN, 3);
       xml += el("givenName", c.givenName, 3);
       xml += el("familyName", c.familyName, 3);
 
@@ -94,10 +94,10 @@ export function generateXml(form: FormDataDraft): string {
       }
 
       if (c.affiliation) {
-        const attrsAff: Record<string, string | undefined> = {};
-        if (c.lang) attrsAff["xml:lang"] = c.lang;
-        xml += elAttr("affiliation", c.affiliation, attrsAff, 3);
+        // no xml:lang here anymore
+        xml += el("affiliation", c.affiliation, 3);
       }
+
       xml += "\t\t</creator>\n";
     }
     xml += "\t</creators>\n";
@@ -113,7 +113,6 @@ export function generateXml(form: FormDataDraft): string {
       attrsPub["publisherIdentifierScheme"] =
         publisher.publisherIdentifierScheme;
     if (publisher.schemeURI) attrsPub["schemeURI"] = publisher.schemeURI;
-    console.log("attrsPub:", attrsPub);
     xml += elAttr("publisher", publisher.name, attrsPub, 1);
   }
 
@@ -121,7 +120,7 @@ export function generateXml(form: FormDataDraft): string {
   if (publicationYear) xml += el("publicationYear", publicationYear, 1);
 
   // MandatoryFields - Resource Type
-  if (resourceType?.type || resourceType?.general) {
+  if (resourceType?.type) {
     const attrsRT: Record<string, string | undefined> = {};
     if (resourceType.general)
       attrsRT["resourceTypeGeneral"] = resourceType.general;
@@ -147,9 +146,13 @@ export function generateXml(form: FormDataDraft): string {
 
   // Recommended fields - Contributors
   const contributors = form.recommended?.contributors ?? [];
-  if (contributors.length > 0) {
+  // Filter contributors to only those with a non-empty name
+  const validContributors = contributors.filter(
+    (c) => c.name && c.name.trim() !== ""
+  );
+  if (validContributors.length > 0) {
     xml += "\t<contributors>\n";
-    for (const c of contributors) {
+    for (const c of validContributors) {
       const typeAttr = c.type ? ` contributorType="${escapeAttr(c.type)}"` : "";
       xml += `\t\t<contributor${typeAttr}>\n`;
 
@@ -165,7 +168,7 @@ export function generateXml(form: FormDataDraft): string {
         const attrsNI: Record<string, string | undefined> = {};
         if (c.nameIdentifierScheme)
           attrsNI["nameIdentifierScheme"] = c.nameIdentifierScheme;
-        if (c.schemeURI) attrsNI["schemeURI"] = c.schemeURI; // for nameIdentifier
+        if (c.schemeURI) attrsNI["schemeURI"] = c.schemeURI;
         xml += elAttr("nameIdentifier", c.nameIdentifier, attrsNI, 3);
       }
 
@@ -178,12 +181,10 @@ export function generateXml(form: FormDataDraft): string {
             c as any
           ).affiliationIdentifierScheme;
 
-        // use a distinct property to avoid clashing with nameIdentifier.schemeURI
         const affSchemeURI =
           (c as any).affiliationSchemeURI ?? (c as any).affiliationSchemeUri;
         if (affSchemeURI) attrsAff["schemeURI"] = affSchemeURI;
 
-        // NOTE: removed xml:lang on affiliation per your target
         xml += elAttr("affiliation", c.affiliation, attrsAff, 3);
       }
 
@@ -344,9 +345,13 @@ export function generateXml(form: FormDataDraft): string {
 
   // OtherFields - Funding References
   const fundingReferences = form.other?.fundingReferences ?? [];
-  if (fundingReferences.length > 0) {
+  // Filter contributors to only those with a non-empty name
+  const validFundingReferences = fundingReferences.filter(
+    (f: { funderName: string }) => f.funderName && f.funderName.trim() !== ""
+  );
+  if (validFundingReferences.length > 0) {
     xml += "\t<fundingReferences>\n";
-    for (const f of fundingReferences) {
+    for (const f of validFundingReferences) {
       xml += "\t\t<fundingReference>\n";
 
       // Funder name
@@ -365,8 +370,7 @@ export function generateXml(form: FormDataDraft): string {
       if (f.awardNumber) {
         const attrsAN: Record<string, string | undefined> = {};
         // your model uses awardNumberUri, but DataCite uses awardURI (attribute) — you already mapped that
-        if (f.awardURI)
-          attrsAN["awardURI"] = f.awardURI;
+        if (f.awardURI) attrsAN["awardURI"] = f.awardURI;
         xml += elAttr("awardNumber", f.awardNumber, attrsAN, 3);
       }
 

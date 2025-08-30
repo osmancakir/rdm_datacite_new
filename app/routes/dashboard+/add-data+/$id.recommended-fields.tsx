@@ -1,18 +1,13 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { InputField } from "@/components/input-field";
+import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { TextareaField } from "@/components/textarea-field";
 import { PlusIcon, XIcon } from "lucide-react";
 import { useParams } from "react-router";
 import { saveDraftStep, getDraftById } from "@/lib/localStorage";
+import { hasAnyValue } from "@/lib/utils";
 import {
   RecommendedFieldsSchema,
   type RecommendedFieldsType,
@@ -152,6 +147,7 @@ const resourceTypeGeneralOptions = [
 const nameTypeOptions = ["Personal", "Organizational"];
 
 const nameIdentifierSchemeOptions = ["GND", "ORCID"];
+const affiliationIdentifierSchemeOptions = ["ROR", "GRID", "ISNI", "Other"];
 
 const descriptionTypes = ["Abstract", "Methods", "TechnicalInfo"];
 export default function RecommendedFields() {
@@ -224,8 +220,9 @@ export default function RecommendedFields() {
   const parseFormData = (): RecommendedFieldsType => {
     const formData = new FormData(formRef.current!);
 
-    return {
-      subjects: Array.from({ length: subjectCount }).map((_, i) => ({
+    // Parse and filter out empty ones
+    const subjects = Array.from({ length: subjectCount })
+      .map((_, i) => ({
         subject: formData.get(`subjects[${i}].subject`) as string,
         subjectScheme: formData.get(`subjects[${i}].subjectScheme`) as string,
         schemeURI: formData.get(`subjects[${i}].schemeURI`) as string,
@@ -234,8 +231,11 @@ export default function RecommendedFields() {
           `subjects[${i}].classificationCode`
         ) as string,
         lang: formData.get(`subjects[${i}].lang`) as string,
-      })),
-      contributors: Array.from({ length: contributorCount }).map((_, i) => ({
+      }))
+      .filter(hasAnyValue);
+
+    const contributors = Array.from({ length: contributorCount })
+      .map((_, i) => ({
         name: formData.get(`contributors[${i}].name`) as string,
         nameType: formData.get(`contributors[${i}].nameType`) as string,
         type: formData.get(`contributors[${i}].type`) as string,
@@ -247,7 +247,7 @@ export default function RecommendedFields() {
         nameIdentifierScheme: formData.get(
           `contributors[${i}].nameIdentifierScheme`
         ) as string,
-        schemeURI: formData.get(`contributors[${i}].schemeURI`) as string, // for nameIdentifier
+        schemeURI: formData.get(`contributors[${i}].schemeURI`) as string,
         affiliation: formData.get(`contributors[${i}].affiliation`) as string,
         affiliationIdentifier: formData.get(
           `contributors[${i}].affiliationIdentifier`
@@ -258,46 +258,53 @@ export default function RecommendedFields() {
         affiliationSchemeURI: formData.get(
           `contributors[${i}].affiliationSchemeURI`
         ) as string,
-      })),
-      dates: Array.from({ length: dateCount }).map((_, i) => ({
+      }))
+      .filter(hasAnyValue);
+
+    const dates = Array.from({ length: dateCount })
+      .map((_, i) => ({
         date: formData.get(`dates[${i}].date`) as string,
         dateType: formData.get(`dates[${i}].dateType`) as string,
         dateInformation: formData.get(`dates[${i}].dateInformation`) as string,
-      })),
-      relatedIdentifiers: Array.from({ length: relatedIdentifierCount }).map(
-        (_, i) => ({
-          relatedIdentifier: formData.get(
-            `relatedIdentifiers[${i}].relatedIdentifier`
-          ) as string,
-          relatedIdentifierType: formData.get(
-            `relatedIdentifiers[${i}].relatedIdentifierType`
-          ) as string,
-          relationType: formData.get(
-            `relatedIdentifiers[${i}].relationType`
-          ) as string,
-          relatedMetadataScheme: formData.get(
-            `relatedIdentifiers[${i}].relatedMetadataScheme`
-          ) as string,
-          schemeURI: formData.get(
-            `relatedIdentifiers[${i}].schemeURI`
-          ) as string,
-          schemeType: formData.get(
-            `relatedIdentifiers[${i}].schemeType`
-          ) as string,
-          resourceTypeGeneral: formData.get(
-            `relatedIdentifiers[${i}].resourceTypeGeneral`
-          ) as string,
-        })
-      ),
+      }))
+      .filter(hasAnyValue);
 
-      descriptions: Array.from({ length: descriptionCount }).map((_, i) => ({
+    const relatedIdentifiers = Array.from({ length: relatedIdentifierCount })
+      .map((_, i) => ({
+        relatedIdentifier: formData.get(
+          `relatedIdentifiers[${i}].relatedIdentifier`
+        ) as string,
+        relatedIdentifierType: formData.get(
+          `relatedIdentifiers[${i}].relatedIdentifierType`
+        ) as string,
+        relationType: formData.get(
+          `relatedIdentifiers[${i}].relationType`
+        ) as string,
+        relatedMetadataScheme: formData.get(
+          `relatedIdentifiers[${i}].relatedMetadataScheme`
+        ) as string,
+        schemeURI: formData.get(`relatedIdentifiers[${i}].schemeURI`) as string,
+        schemeType: formData.get(
+          `relatedIdentifiers[${i}].schemeType`
+        ) as string,
+        resourceTypeGeneral: formData.get(
+          `relatedIdentifiers[${i}].resourceTypeGeneral`
+        ) as string,
+      }))
+      .filter(hasAnyValue);
+
+    const descriptions = Array.from({ length: descriptionCount })
+      .map((_, i) => ({
         description: formData.get(`descriptions[${i}].description`) as string,
         descriptionType: formData.get(
           `descriptions[${i}].descriptionType`
         ) as string,
         lang: formData.get(`descriptions[${i}].lang`) as string,
-      })),
-      geoLocations: Array.from({ length: geoLocationCount }).map((_, i) => {
+      }))
+      .filter(hasAnyValue);
+
+    const geoLocations = Array.from({ length: geoLocationCount })
+      .map((_, i) => {
         const pointCount = polygonPointCounts[i] || 0;
         return {
           place: formData.get(`geoLocations[${i}].place`) as string,
@@ -311,6 +318,7 @@ export default function RecommendedFields() {
             northLat: formData.get(`geoLocations[${i}].box.northLat`) as string,
             eastLong: formData.get(`geoLocations[${i}].box.eastLong`) as string,
           },
+
           polygon: Array.from({ length: pointCount }).map((_, j) => ({
             lat: formData.get(`geoLocations[${i}].polygon[${j}].lat`) as string,
             long: formData.get(
@@ -318,7 +326,16 @@ export default function RecommendedFields() {
             ) as string,
           })),
         };
-      }),
+      })
+      .filter(hasAnyValue);
+
+    return {
+      subjects,
+      contributors,
+      dates,
+      relatedIdentifiers,
+      descriptions,
+      geoLocations,
     };
   };
 
@@ -382,66 +399,59 @@ export default function RecommendedFields() {
                 key={index}
                 className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
-                <div className="flex flex-col lg:flex-row gap-2">
-                  <Input
+                <div className="flex flex-col lg:flex-row lg:items-start gap-2">
+                  <InputField
                     name={`subjects[${index}].subject`}
                     placeholder="Subject"
                     defaultValue={savedSubject.subject}
                     className="flex-1"
+                    error={getError(`subjects.${index}.subject`)}
                   />
-                  <Select
+                  <SelectField
                     name={`subjects[${index}].subjectScheme`}
                     defaultValue={savedSubject.subjectScheme}
-                  >
-                    <SelectTrigger className="w-[240px]">
-                      <SelectValue placeholder="Subject Scheme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjectSchemeOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>
-                          {opt}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Subject Scheme"
+                    triggerClassName="w-[240px]"
+                    options={subjectSchemeOptions}
+                    error={getError(`subjects.${index}.subjectScheme`)}
+                  />
                 </div>
-                {getError(`subjects.${index}.subject`) && (
-                  <p className="text-destructive text-xs mt-1">
-                    {getError(`subjects.${index}.subject`)}
-                  </p>
-                )}
 
                 <div className="flex flex-wrap gap-2">
-                  <Input
+                  <InputField
                     placeholder="Scheme URI"
                     name={`subjects[${index}].schemeURI`}
                     defaultValue={savedSubject.schemeURI}
                     className="min-w-[220px]"
+                    error={getError(`subjects.${index}.schemeURI`)}
                   />
-                  <Input
+                  <InputField
                     placeholder="Value URI"
                     name={`subjects[${index}].valueURI`}
                     defaultValue={savedSubject.valueURI}
                     className="min-w-[220px]"
+                    error={getError(`subjects.${index}.valueURI`)}
                   />
-                  <Input
+                  <InputField
                     placeholder="Classification Code"
                     name={`subjects[${index}].classificationCode`}
                     defaultValue={savedSubject.classificationCode}
                     className="min-w-[200px]"
+                    error={getError(`subjects.${index}.classificationCode`)}
                   />
-                  <Input
+                  <InputField
                     placeholder="Lang"
                     maxLength={3}
                     name={`subjects[${index}].lang`}
                     defaultValue={savedSubject.lang}
-                    className="w-[80px]"
+                    className="w-20"
+                    error={getError(`subjects.${index}.lang`)}
                   />
                 </div>
 
                 {index > 0 && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
                     onClick={() => {
                       setSubjectCount((prev: number) => prev - 1);
@@ -482,125 +492,107 @@ export default function RecommendedFields() {
                 className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
                 <div className="flex flex-col lg:flex-row gap-2">
-                  <Input
+                  <InputField
                     name={`contributors[${index}].name`}
                     placeholder="Full Name"
                     defaultValue={savedContributor.name}
+                    error={getError(`contributors.${index}.name`)}
                   />
-                  {getError(`contributors.${index}.name`) && (
-                    <p className="text-destructive text-xs mt-1">
-                      {getError(`contributors.${index}.name`)}
-                    </p>
-                  )}
-
-                  <Select
+                  <SelectField
                     name={`contributors[${index}].nameType`}
                     defaultValue={savedContributor.nameType}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Name Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {nameTypeOptions.map((opt) => (
-                        <SelectItem key={opt} value={opt}>
-                          {opt}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Name Type"
+                    triggerClassName="w-full"
+                    options={nameTypeOptions}
+                    error={getError(`contributors.${index}.nameType`)}
+                  />
                 </div>
 
-                <Select
+                <SelectField
                   name={`contributors[${index}].type`}
                   defaultValue={savedContributor.type}
-                >
-                  <SelectTrigger className="w-[240px]">
-                    <SelectValue placeholder="Contributor Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contributorTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Contributor Type"
+                  triggerClassName="w-[240px]"
+                  options={contributorTypes}
+                  error={getError(`contributors.${index}.type`)}
+                />
 
                 <div className="grid lg:grid-cols-2 gap-2">
-                  <Input
+                  <InputField
                     placeholder="Given Name"
                     name={`contributors[${index}].givenName`}
                     defaultValue={savedContributor.givenName}
+                    error={getError(`contributors.${index}.givenName`)}
                   />
-                  <Input
+                  <InputField
                     placeholder="Family Name"
                     name={`contributors[${index}].familyName`}
                     defaultValue={savedContributor.familyName}
-                  />
-                  <Input
-                    placeholder="Affiliation"
-                    name={`contributors[${index}].affiliation`}
-                    defaultValue={savedContributor.affiliation}
-                  />
-                </div>
-                <div className="grid lg:grid-cols-3 gap-2">
-                  <Input
-                    placeholder="Affiliation Identifier"
-                    name={`contributors[${index}].affiliationIdentifier`}
-                    defaultValue={savedContributor.affiliationIdentifier}
-                  />
-                  <Select
-                    name={`contributors[${index}].affiliationIdentifierScheme`}
-                    defaultValue={savedContributor.affiliationIdentifierScheme}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Affiliation ID Scheme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["ROR", "GRID", "ISNI", "Other"].map((scheme) => (
-                        <SelectItem key={scheme} value={scheme}>
-                          {scheme}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    placeholder="Affiliation Scheme URI (e.g., https://ror.org)"
-                    name={`contributors[${index}].affiliationSchemeURI`}
-                    defaultValue={savedContributor.affiliationSchemeURI}
+                    error={getError(`contributors.${index}.familyName`)}
                   />
                 </div>
                 <div className="grid lg:grid-cols-2 gap-2">
-                  <Input
+                  <InputField
+                    placeholder="Affiliation"
+                    name={`contributors[${index}].affiliation`}
+                    defaultValue={savedContributor.affiliation}
+                    error={getError(`contributors.${index}.affiliation`)}
+                  />
+                  <InputField
+                    placeholder="Affiliation Identifier"
+                    name={`contributors[${index}].affiliationIdentifier`}
+                    defaultValue={savedContributor.affiliationIdentifier}
+                    error={getError(
+                      `contributors.${index}.affiliationIdentifier`
+                    )}
+                  />
+                  <SelectField
+                    name={`contributors[${index}].affiliationIdentifierScheme`}
+                    defaultValue={savedContributor.affiliationIdentifierScheme}
+                    triggerClassName="w-full"
+                    placeholder="Affiliation ID Scheme"
+                    options={affiliationIdentifierSchemeOptions}
+                    error={getError(
+                      `contributors.${index}.affiliationIdentifierScheme`
+                    )}
+                  />
+                  <InputField
+                    placeholder="Affiliation Scheme URI"
+                    name={`contributors[${index}].affiliationSchemeURI`}
+                    defaultValue={savedContributor.affiliationSchemeURI}
+                    error={getError(
+                      `contributors.${index}.affiliationSchemeURI`
+                    )}
+                  />
+                </div>
+                <div className="grid lg:grid-cols-2 gap-2">
+                  <InputField
                     placeholder="Name Identifier"
                     name={`contributors[${index}].nameIdentifier`}
                     defaultValue={savedContributor.nameIdentifier}
+                    error={getError(`contributors.${index}.nameIdentifier`)}
                   />
-                  <Select
+                  <SelectField
                     name={`contributors[${index}].nameIdentifierScheme`}
                     defaultValue={savedContributor.nameIdentifierScheme}
-                  >
-                    <SelectTrigger className="w-[240px]">
-                      <SelectValue placeholder="Identifier Scheme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {nameIdentifierSchemeOptions.map((scheme) => (
-                        <SelectItem key={scheme} value={scheme}>
-                          {scheme}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Identifier Scheme"
+                    triggerClassName="w-[240px]"
+                    options={nameIdentifierSchemeOptions}
+                    error={getError(
+                      `contributors.${index}.nameIdentifierScheme`
+                    )}
+                  />
                 </div>
-                <Input
+                <InputField
                   placeholder="Scheme URI"
                   name={`contributors[${index}].schemeURI`}
                   defaultValue={savedContributor.schemeURI}
+                  error={getError(`contributors.${index}.schemeURI`)}
                 />
 
                 {index > 0 && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
                     onClick={() => {
                       setContributorCount((prev: number) => prev - 1);
@@ -644,44 +636,34 @@ export default function RecommendedFields() {
               >
                 <div className="grid lg:grid-cols-2 gap-2">
                   <div>
-                    <Input
+                    <InputField
                       type="date"
                       placeholder="Date"
                       name={`dates[${index}].date`}
                       defaultValue={savedDate.date}
+                      error={getError(`dates.${index}.date`)}
                     />
-                    {getError(`dates.${index}.date`) && (
-                      <p className="text-destructive text-xs mt-1">
-                        {getError(`dates.${index}.date`)}
-                      </p>
-                    )}
                   </div>
 
-                  <Select
+                  <SelectField
                     name={`dates[${index}].dateType`}
                     defaultValue={savedDate.dateType}
-                  >
-                    <SelectTrigger className="w-[240px]">
-                      <SelectValue placeholder="Date Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {dateTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Date Type"
+                    triggerClassName="w-[240px]"
+                    options={dateTypes}
+                    error={getError(`dates.${index}.dateType`)}
+                  />
                 </div>
-                <Input
-                  placeholder="Optional: Date Information"
+                <InputField
+                  placeholder="Date Information"
                   name={`dates[${index}].dateInformation`}
                   defaultValue={savedDate.dateInformation}
+                  error={getError(`dates.${index}.dateInformation`)}
                 />
 
                 {index > 0 && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
                     onClick={() => {
                       setDateCount((prev: number) => prev - 1);
@@ -723,93 +705,76 @@ export default function RecommendedFields() {
                 key={index}
                 className="border rounded-lg p-4 mb-4 space-y-2 relative"
               >
-                <Input
+                <InputField
                   placeholder="Related Identifier (e.g., DOI, ISBN)"
                   name={`relatedIdentifiers[${index}].relatedIdentifier`}
                   defaultValue={savedIdentifier.relatedIdentifier}
+                  error={getError(
+                    `relatedIdentifiers.${index}.relatedIdentifier`
+                  )}
                 />
-                {getError(`relatedIdentifiers.${index}.relatedIdentifier`) && (
-                  <p className="text-destructive text-xs mt-1">
-                    {getError(`relatedIdentifiers.${index}.relatedIdentifier`)}
-                  </p>
-                )}
 
-                <div className="flex flex-wrap gap-2">
-                  <Select
+                <div className="flex flex-col lg:flex-row lg:items-start gap-2">
+                  <SelectField
                     name={`relatedIdentifiers[${index}].relatedIdentifierType`}
                     defaultValue={savedIdentifier.relatedIdentifierType}
-                  >
-                    <SelectTrigger className="w-[240px]">
-                      <SelectValue placeholder="Identifier Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {relatedIdentifiersTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select
+                    placeholder="Identifier Type"
+                    options={relatedIdentifiersTypes}
+                    error={getError(
+                      `relatedIdentifiers.${index}.relatedIdentifierType`
+                    )}
+                  />
+                  <SelectField
                     name={`relatedIdentifiers[${index}].relationType`}
                     defaultValue={savedIdentifier.relationType}
-                  >
-                    <SelectTrigger className="w-[240px]">
-                      <SelectValue placeholder="Relation Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {relationTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Relation Type"
+                    options={relationTypes}
+                    error={getError(`relatedIdentifiers.${index}.relationType`)}
+                  />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Input
-                    placeholder="Optional: Related Metadata Scheme"
+                  <InputField
+                    placeholder="Related Metadata Scheme"
                     name={`relatedIdentifiers[${index}].relatedMetadataScheme`}
                     defaultValue={savedIdentifier.relatedMetadataScheme}
                     className="min-w-[200px]"
+                    error={getError(
+                      `relatedIdentifiers.${index}.relatedMetadataScheme`
+                    )}
                   />
 
-                  <Input
-                    placeholder="Optional: Scheme URI"
+                  <InputField
+                    placeholder="Scheme URI"
                     name={`relatedIdentifiers[${index}].schemeURI`}
                     defaultValue={savedIdentifier.schemeURI}
                     className="min-w-[200px]"
+                    error={getError(`relatedIdentifiers.${index}.schemeURI`)}
                   />
 
-                  <Input
-                    placeholder="Optional: Scheme Type (e.g. XSD)"
+                  <InputField
+                    placeholder="Scheme Type"
                     name={`relatedIdentifiers[${index}].schemeType`}
                     defaultValue={savedIdentifier.schemeType}
                     className="min-w-[200px]"
+                    error={getError(`relatedIdentifiers.${index}.schemeType`)}
                   />
 
-                  <Select
+                  <SelectField
                     name={`relatedIdentifiers[${index}].resourceTypeGeneral`}
                     defaultValue={savedIdentifier.resourceTypeGeneral}
-                  >
-                    <SelectTrigger className="min-w-[200px]">
-                      <SelectValue placeholder="Resource Type General" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {resourceTypeGeneralOptions.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Resource Type General"
+                    triggerClassName="w-[200px]"
+                    options={resourceTypeGeneralOptions}
+                    error={getError(
+                      `relatedIdentifiers.${index}.resourceTypeGeneral`
+                    )}
+                  />
                 </div>
 
                 {index > 0 && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
                     onClick={() => {
                       setRelatedIdentifierCount((prev: number) => prev - 1);
@@ -848,52 +813,39 @@ export default function RecommendedFields() {
           {Array.from({ length: descriptionCount }).map((_, index) => {
             const savedDescription = saved.descriptions?.[index] || {};
             return (
-              <div
-                key={index}
-                className="border rounded-lg p-4 mb-4 space-y-2 relative"
-              >
+              <div key={index} className="border rounded-lg p-4 mb-4 gap-2">
                 <div>
-                  <Textarea
+                  <TextareaField
                     placeholder="Description text"
                     name={`descriptions[${index}].description`}
                     defaultValue={savedDescription.description}
+                    error={getError(`descriptions.${index}.description`)}
                   />
-                  {getError(`descriptions.${index}.description`) && (
-                    <p className="text-destructive text-xs mt-1">
-                      {getError(`descriptions.${index}.description`)}
-                    </p>
-                  )}
                 </div>
 
-                <div className="flex flex-wrap gap-4">
-                  <Select
+                <div className="flex flex-col lg:flex-row lg:items-start gap-2">
+                  <SelectField
                     name={`descriptions[${index}].descriptionType`}
                     defaultValue={savedDescription.descriptionType}
-                  >
-                    <SelectTrigger className="w-[240px]">
-                      <SelectValue placeholder="Description Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {descriptionTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Description Type"
+                    triggerClassName="w-full"
+                    options={descriptionTypes}
+                    error={getError(`descriptions.${index}.descriptionType`)}
+                  />
 
-                  <Input
-                    className="w-[80px]"
+                  <InputField
+                    className="w-20"
                     placeholder="Lang"
                     name={`descriptions[${index}].lang`}
                     defaultValue={savedDescription.lang}
                     maxLength={3}
+                    error={getError(`descriptions.${index}.lang`)}
                   />
                 </div>
 
                 {index > 0 && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
                     onClick={() => {
                       setDescriptionCount((prev: number) => prev - 1);
@@ -939,80 +891,103 @@ export default function RecommendedFields() {
                 className="border rounded-lg p-4 mb-4 space-y-4 relative"
               >
                 {/* Place */}
-                <Input
+                <InputField
                   placeholder="GeoLocation Place (e.g. Munich, Germany)"
                   name={`geoLocations[${index}].place`}
                   defaultValue={savedGeo.place}
+                  error={getError(`geoLocations.${index}.place`)}
                 />
 
                 {/* Point */}
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder="Latitude (Point)"
-                    type="number"
-                    name={`geoLocations[${index}].point.lat`}
-                    defaultValue={savedGeo.point?.lat}
-                  />
-                  <Input
-                    placeholder="Longitude (Point)"
-                    type="number"
-                    name={`geoLocations[${index}].point.long`}
-                    defaultValue={savedGeo.point?.long}
-                  />
+                <div className="space-y-2">
+                  <p className="font-medium">Point</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <InputField
+                      placeholder="Latitude (Point)"
+                      type="number"
+                      name={`geoLocations[${index}].point.lat`}
+                      defaultValue={savedGeo.point?.lat}
+                      error={getError(`geoLocations.${index}.point.lat`)}
+                    />
+                    <InputField
+                      placeholder="Longitude (Point)"
+                      type="number"
+                      name={`geoLocations[${index}].point.long`}
+                      defaultValue={savedGeo.point?.long}
+                      error={getError(`geoLocations.${index}.point.long`)}
+                    />
+                  </div>
                 </div>
 
                 {/* Box */}
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder="South Latitude (Box)"
-                    type="number"
-                    name={`geoLocations[${index}].box.southLat`}
-                    defaultValue={savedGeo.box?.southLat}
-                  />
-                  <Input
-                    placeholder="West Longitude (Box)"
-                    type="number"
-                    name={`geoLocations[${index}].box.westLong`}
-                    defaultValue={savedGeo.box?.westLong}
-                  />
-                  <Input
-                    placeholder="North Latitude (Box)"
-                    type="number"
-                    name={`geoLocations[${index}].box.northLat`}
-                    defaultValue={savedGeo.box?.northLat}
-                  />
-                  <Input
-                    placeholder="East Longitude (Box)"
-                    type="number"
-                    name={`geoLocations[${index}].box.eastLong`}
-                    defaultValue={savedGeo.box?.eastLong}
-                  />
+                <div className="space-y-2">
+                  <p className="font-medium">Box</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <InputField
+                      placeholder="South Latitude (Box)"
+                      type="number"
+                      name={`geoLocations[${index}].box.southLat`}
+                      defaultValue={savedGeo.box?.southLat}
+                      error={getError(`geoLocations.${index}.box.southLat`)}
+                    />
+                    <InputField
+                      placeholder="West Longitude (Box)"
+                      type="number"
+                      name={`geoLocations[${index}].box.westLong`}
+                      defaultValue={savedGeo.box?.westLong}
+                      error={getError(`geoLocations.${index}.box.westLong`)}
+                    />
+                    <InputField
+                      placeholder="North Latitude (Box)"
+                      type="number"
+                      name={`geoLocations[${index}].box.northLat`}
+                      defaultValue={savedGeo.box?.northLat}
+                      error={getError(`geoLocations.${index}.box.northLat`)}
+                    />
+                    <InputField
+                      placeholder="East Longitude (Box)"
+                      type="number"
+                      name={`geoLocations[${index}].box.eastLong`}
+                      defaultValue={savedGeo.box?.eastLong}
+                      error={getError(`geoLocations.${index}.box.eastLong`)}
+                    />
+                  </div>
                 </div>
-
                 {/* Polygon Points*/}
                 <div className="space-y-2">
                   <p className="font-medium">Polygon Points</p>
+                  {getError(`geoLocations.${index}.polygon._polygon`) && (
+                    <p className="text-xs text-destructive">
+                      {getError(`geoLocations.${index}.polygon._polygon`)}
+                    </p>
+                  )}
                   {Array.from({ length: pointCount }).map((_, pIndex) => (
                     <div
                       key={pIndex}
                       className="grid grid-cols-2 gap-2 items-center"
                     >
-                      <Input
+                      <InputField
                         placeholder="Latitude"
                         type="number"
                         name={`geoLocations[${index}].polygon[${pIndex}].lat`}
                         defaultValue={savedGeo.polygon?.[pIndex]?.lat}
+                        error={getError(
+                          `geoLocations.${index}.polygon.${pIndex}.lat`
+                        )}
                       />
-                      <Input
+                      <InputField
                         placeholder="Longitude"
                         type="number"
                         name={`geoLocations[${index}].polygon[${pIndex}].long`}
                         defaultValue={savedGeo.polygon?.[pIndex]?.long}
+                        error={getError(
+                          `geoLocations.${index}.polygon.${pIndex}.long`
+                        )}
                       />
                       {/*TODO: Should this button add / remove single set or set of 4 points? */}
                       {pIndex >= 4 && (
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="icon"
                           className="col-span-2 justify-self-end"
                           onClick={() =>
@@ -1036,7 +1011,7 @@ export default function RecommendedFields() {
 
                 {index > 0 && (
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="icon"
                     onClick={() => {
                       setGeoLocationCount((prev: number) => prev - 1);
