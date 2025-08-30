@@ -228,21 +228,35 @@ const ResourceTypeSchema = z.object({
 });
 
 /** ---------- Mandatory Fields ---------- */
-export const MandatoryFieldsSchema = z.object({
-  identifier: IdentifierSchema,
-  titles: z
-    .array(TitleSchema)
-    .min(1, { message: "At least one title is required" }),
-  creators: z
-    .array(CreatorSchema)
-    .min(1, { message: "At least one creator is required" }),
-  publisher: PublisherSchema,
-  publicationYear: z
-    .string()
-    .trim()
-    .regex(yearPattern, { message: "Invalid year format (YYYY)" }),
-  resourceType: ResourceTypeSchema,
-});
+export const MandatoryFieldsSchema = z
+  .object({
+    identifier: IdentifierSchema,
+    titles: z.array(TitleSchema),     // remove .min
+    creators: z.array(CreatorSchema), // remove .min
+    publisher: PublisherSchema,
+    publicationYear: z
+      .string()
+      .trim()
+      .regex(yearPattern, { message: 'Invalid year format (YYYY)' }),
+    resourceType: ResourceTypeSchema,
+  })
+  .superRefine((d, ctx) => {
+    if (!d.titles?.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ['_titles'],
+        message: 'At least one title is required',
+      })
+    }
+    if (!d.creators?.length) {
+      ctx.addIssue({
+        code:  "custom",
+        path: ['_creators'],
+        message: 'At least one creator is required',
+      })
+    }
+  })
+
 
 export type MandatoryFieldsType = z.infer<typeof MandatoryFieldsSchema>;
 

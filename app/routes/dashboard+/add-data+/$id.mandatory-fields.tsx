@@ -139,7 +139,9 @@ export default function MandatoryFields() {
   const validateAndSave = () => {
     try {
       const formData = parseFormData();
+      console.log("Parsed form data:", formData);
       const result = MandatoryFieldsSchema.safeParse(formData);
+      console.log("Validation result:", result);
       if (!result.success) {
         const newErrors: Record<string, string[]> = {};
         result.error.issues.forEach((issue) => {
@@ -200,7 +202,12 @@ export default function MandatoryFields() {
         </section>
         {/* Titles */}
         <section>
-          <h2 className="text-xl font-semibold mb-4">Titles</h2>
+          <h2 className="text-xl font-semibold mb-1">Titles</h2>
+          {getError("_titles") && (
+            <p id="titles-error" className="mb-4 text-xs text-destructive">
+              {getError("_titles")}
+            </p>
+          )}
           {Array.from({ length: titleCount }).map((_, index) => {
             const savedTitle = saved.titles?.[index] || {};
             return (
@@ -251,7 +258,12 @@ export default function MandatoryFields() {
 
         {/* Creators */}
         <section>
-          <h2 className="text-xl font-semibold mb-4">Creators</h2>
+          <h2 className="text-xl font-semibold mb-1">Creators</h2>
+          {getError("_creators") && (
+            <p id="creators-error" className="mb-4 text-xs text-destructive">
+              {getError("_creators")}
+            </p>
+          )}
           {Array.from({ length: creatorCount }).map((_, index) => {
             const savedCreator = saved.creators?.[index] || {};
             return (
