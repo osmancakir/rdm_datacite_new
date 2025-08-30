@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { InputField } from "@/components/input-field";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import { TextareaField } from "@/components/textarea-field";
-import { PlusIcon, XIcon } from "lucide-react";
+import { PlusIcon, XIcon, CheckIcon } from "lucide-react";
 import { useParams } from "react-router";
 import { saveDraftStep, getDraftById } from "@/lib/localStorage";
 import { hasAnyValue } from "@/lib/utils";
@@ -157,6 +157,29 @@ export default function RecommendedFields() {
   const saved = getDraftById(id)?.recommended || {};
   //const saved = loadFormDraft().recommended || {};
   const navigate = useNavigate();
+    const [isSaved, setIsSaved] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout>(null);
+  
+    // Clean up timeout on component unmount
+    useEffect(() => {
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
+    }, []);
+  
+    // Reset the saved status after 1 second
+    useEffect(() => {
+      if (isSaved) {
+        timeoutRef.current = setTimeout(() => setIsSaved(false), 1000);
+      }
+      return () => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+      };
+    }, [isSaved]);
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
@@ -379,7 +402,9 @@ export default function RecommendedFields() {
   };
 
   const handleSave = () => {
-    validateAndSave();
+    if (validateAndSave()) {
+      setIsSaved(true);
+    }
   };
 
   return (
@@ -1053,12 +1078,24 @@ export default function RecommendedFields() {
           </Button>
         </section>
 
-        <div className="flex flex-col md:flex-row gap-4 pt-8">
+        <div className="flex flex-col lg:flex-row gap-4 pt-8">
           <Button variant="outline" onClick={handleSaveAndBack}>
             ← Back
           </Button>
-          <Button variant="outline" onClick={handleSave} type="button">
-            Save
+          <Button
+            variant="outline"
+            onClick={handleSave}
+            type="button"
+            disabled={isSaved}
+          >
+            {isSaved ? (
+              <>
+                <CheckIcon className="w-4 h-4" />
+                Saved!
+              </>
+            ) : (
+              "Save"
+            )}
           </Button>
           <Button onClick={handleSaveAndNext}>Next: Other Elements →</Button>
         </div>

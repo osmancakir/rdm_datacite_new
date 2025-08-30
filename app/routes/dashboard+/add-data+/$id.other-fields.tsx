@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { InputField } from "@/components/input-field";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { useNavigate } from "react-router";
 import { useParams } from "react-router";
 import { saveDraftStep, getDraftById } from "@/lib/localStorage";
 import { hasAnyValue } from "@/lib/utils";
-import { PlusIcon, XIcon } from "lucide-react";
+import { PlusIcon, XIcon, CheckIcon } from "lucide-react";
 import { OtherFieldsSchema, type OtherFieldsType } from "@/types/fields";
 
 const alternateIdentifierTypeOptions = [
@@ -49,6 +49,31 @@ export default function OtherFields() {
 
   const formRef = useRef<HTMLFormElement>(null);
   const navigate = useNavigate();
+
+  const [isSaved, setIsSaved] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout>(null);
+
+  // Clean up timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Reset the saved status after 1 second
+  useEffect(() => {
+    if (isSaved) {
+      timeoutRef.current = setTimeout(() => setIsSaved(false), 1000);
+    }
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [isSaved]);
+
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   const [alternateIdCount, setAlternateIdCount] = useState(
@@ -161,6 +186,12 @@ export default function OtherFields() {
     // even though the user went back
     if (validateAndSave()) {
       navigate(`/dashboard/add-data/${id}/recommended-fields`);
+    }
+  };
+
+  const handleSave = () => {
+    if (validateAndSave()) {
+      setIsSaved(true);
     }
   };
 
@@ -549,9 +580,24 @@ export default function OtherFields() {
           </Button>
         </section>
 
-        <div className="mt-8 flex gap-4">
+        <div className="flex flex-col lg:flex-row gap-4 pt-8">
           <Button variant="outline" onClick={handleSaveAndBack}>
             ← Back
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleSave}
+            type="button"
+            disabled={isSaved}
+          >
+            {isSaved ? (
+              <>
+                <CheckIcon className="w-4 h-4" />
+                Saved!
+              </>
+            ) : (
+              "Save"
+            )}
           </Button>
           <Button onClick={handleSaveAndFinish}>Save and Finish</Button>
         </div>
