@@ -23,6 +23,8 @@ import {
   descriptionTypes,
 } from "@/types/controlledLists";
 
+// TODO: Date need to support other formats than YYYY-MM-DD e.g. this is valid: 2050-09-01T00:00:00
+
 export default function RecommendedFields() {
   const { id } = useParams<{ id: string }>();
   // 100% sure id will be there
@@ -682,7 +684,6 @@ export default function RecommendedFields() {
                         return newErrors;
                       });
                     }}
-                    className="absolute top-2 right-2"
                   >
                     <XIcon className="w-4 h-4" />
                   </Button>

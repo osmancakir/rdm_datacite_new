@@ -18,6 +18,8 @@ import {
   resourceTypeGeneralOptions,
 } from "@/types/controlledLists";
 
+// TODO: resourceType is mandatory but is this valid: <resourceType resourceTypeGeneral="Dataset"/>
+
 export default function MandatoryFields() {
   const { id } = useParams<{ id: string }>();
   // 100% sure id will be there
