@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { InputField } from "@/components/input-field";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
-import { XIcon, PlusIcon, CheckIcon  } from "lucide-react";
+import { XIcon, PlusIcon, CheckIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useParams } from "react-router";
 import { saveDraftStep, getDraftById } from "@/lib/localStorage";
@@ -11,27 +11,12 @@ import {
   type MandatoryFieldsType,
 } from "@/types/fields";
 import { hasAnyValue } from "@/lib/utils";
-
-const titleTypeOptions = [
-  "AlternativeTitle",
-  "Subtitle",
-  "TranslatedTitle",
-  "Other",
-];
-const nameTypeOptions = ["Personal", "Organizational"];
-const nameIdentifierSchemeOptions = ["GND", "ORCID"];
-const resourceTypeGeneralOptions = [
-  "Audiovisual",
-  "Collection",
-  "Dataset",
-  "Image",
-  "Model",
-  "Software",
-  "Sound",
-  "Text",
-  "Workflow",
-  "Other",
-];
+import {
+  titleTypeOptions,
+  nameTypeOptions,
+  nameIdentifierSchemeOptions,
+  resourceTypeGeneralOptions,
+} from "@/types/controlledLists";
 
 export default function MandatoryFields() {
   const { id } = useParams<{ id: string }>();
@@ -299,6 +284,7 @@ export default function MandatoryFields() {
                     placeholder="Surname, First Name or Organization Name"
                     defaultValue={savedCreator.name}
                     error={getError(`creators.${index}.name`)}
+                    className="flex-1"
                   />
                   <SelectField
                     name={`creators[${index}].nameType`}
@@ -308,29 +294,37 @@ export default function MandatoryFields() {
                     triggerClassName="w-full"
                     error={getError(`creators.${index}.nameType`)}
                   />
+                  <InputField
+                    className="w-20"
+                    maxLength={3}
+                    placeholder="Lang"
+                    name={`creators[${index}].lang`}
+                    defaultValue={savedCreator.lang}
+                    error={getError(`creators.${index}.lang`)}
+                  />
+                </div>
+                <div className="flex flex-col lg:flex-row gap-2">
+                  <InputField
+                    name={`creators[${index}].givenName`}
+                    placeholder="Given Name (optional)"
+                    defaultValue={savedCreator.givenName}
+                  />
+
+                  <InputField
+                    name={`creators[${index}].familyName`}
+                    placeholder="Family Name (optional)"
+                    defaultValue={savedCreator.familyName}
+                  />
                 </div>
 
                 <InputField
-                  name={`creators[${index}].givenName`}
-                  placeholder="Given Name (optional)"
-                  defaultValue={savedCreator.givenName}
+                  name={`creators[${index}].nameIdentifier`}
+                  placeholder="Name Identifier"
+                  className="flex-1"
+                  defaultValue={savedCreator.nameIdentifier}
+                  error={getError(`creators.${index}.nameIdentifier`)}
                 />
-
-                <InputField
-                  name={`creators[${index}].familyName`}
-                  placeholder="Family Name (optional)"
-                  defaultValue={savedCreator.familyName}
-                />
-
-                <div className="flex flex-col lg:flex-row flex-wrap gap-2 items-center">
-                  <InputField
-                    name={`creators[${index}].nameIdentifier`}
-                    placeholder="Name Identifier"
-                    className="flex-1"
-                    defaultValue={savedCreator.nameIdentifier}
-                    error={getError(`creators.${index}.nameIdentifier`)}
-                  />
-
+                <div className="flex flex-col lg:flex-row flex-wrap gap-2 items-start">
                   <SelectField
                     name={`creators[${index}].nameIdentifierScheme`}
                     defaultValue={savedCreator.nameIdentifierScheme}
@@ -340,7 +334,6 @@ export default function MandatoryFields() {
                     error={getError(`creators.${index}.nameIdentifierScheme`)}
                   />
                   <InputField
-                    className="flex-1"
                     placeholder="Scheme URI"
                     name={`creators[${index}].schemeURI`}
                     defaultValue={savedCreator.schemeURI}
@@ -355,15 +348,6 @@ export default function MandatoryFields() {
                     name={`creators[${index}].affiliation`}
                     defaultValue={savedCreator.affiliation}
                     error={getError(`creators.${index}.affiliation`)}
-                  />
-
-                  <InputField
-                    className="w-20"
-                    maxLength={3}
-                    placeholder="Lang"
-                    name={`creators[${index}].lang`}
-                    defaultValue={savedCreator.lang}
-                    error={getError(`creators.${index}.lang`)}
                   />
                 </div>
 

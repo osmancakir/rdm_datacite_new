@@ -12,144 +12,17 @@ import {
   RecommendedFieldsSchema,
   type RecommendedFieldsType,
 } from "@/types/fields";
+import {
+  nameTypeOptions,
+  nameIdentifierSchemeOptions,
+  dateTypes,
+  contributorTypes,
+  relatedIdentifiersTypes,
+  relationTypes,
+  resourceTypeGeneralOptions,
+  descriptionTypes,
+} from "@/types/controlledLists";
 
-const subjectSchemeOptions = ["DDC", "GND", "wikidata"];
-
-const contributorTypes = [
-  "ContactPerson",
-  "DataCollector",
-  "Editor",
-  "Funder",
-  "HostingInstitution",
-  "ProjectLeader",
-  "ProjectManager",
-  "ProjectMember",
-  "RegistrationAgency",
-  "RegistrationAuthority",
-  "RelatedPerson",
-  "Researcher",
-  "ResearchGroup",
-  "RightsHolder",
-  "Sponsor",
-  "Supervisor",
-  "WorkPackageLeader",
-];
-const dateTypes = [
-  "Accepted",
-  "Available",
-  "Copyrighted",
-  "Collected",
-  "Created",
-  "Issued",
-  "Submitted",
-  "Updated",
-  "Valid",
-];
-const relatedIdentifiersTypes = [
-  "ARK",
-  "arXiv",
-  "bibcode",
-  "CSTR",
-  "DOI",
-  "EAN13",
-  "EISSN",
-  "Handle",
-  "IGSN",
-  "ISBN",
-  "ISSN",
-  "ISTC",
-  "LISSN",
-  "LSID",
-  "PMID",
-  "PURL",
-  "RRID",
-  "UPC",
-  "URL",
-  "URN",
-  "w3id",
-];
-const relationTypes = [
-  "IsCitedBy",
-  "Cites",
-  "IsSupplementTo",
-  "IsSupplementedBy",
-  "IsContinuedBy",
-  "Continues",
-  "IsDescribedBy",
-  "Describes",
-  "HasMetadata",
-  "IsMetadataFor",
-  "HasVersion",
-  "IsVersionOf",
-  "IsNewVersionOf",
-  "IsPreviousVersionOf",
-  "IsPartOf",
-  "HasPart",
-  "IsPublishedIn",
-  "IsReferencedBy",
-  "References",
-  "IsDocumentedBy",
-  "Documents",
-  "IsCompiledBy",
-  "Compiles",
-  "IsVariantFormOf",
-  "IsOriginalFormOf",
-  "IsIdenticalTo",
-  "IsReviewedBy",
-  "Reviews",
-  "IsDerivedFrom",
-  "IsSourceOf",
-  "IsRequiredBy",
-  "Requires",
-  "IsObsoletedBy",
-  "Obsoletes",
-  "IsCollectedBy",
-  "Collects",
-  "IsTranslationOf",
-  "HasTranslation",
-];
-
-const resourceTypeGeneralOptions = [
-  "Audiovisual",
-  "Award",
-  "Book",
-  "BookChapter",
-  "Collection",
-  "ComputationalNotebook",
-  "ConferencePaper",
-  "ConferenceProceeding",
-  "DataPaper",
-  "Dataset",
-  "Dissertation",
-  "Event",
-  "Image",
-  "InteractiveResource",
-  "Instrument",
-  "Journal",
-  "JournalArticle",
-  "Model",
-  "OutputManagementPlan",
-  "PeerReview",
-  "PhysicalObject",
-  "Preprint",
-  "Project",
-  "Report",
-  "Service",
-  "Software",
-  "Sound",
-  "Standard",
-  "StudyRegistration",
-  "Text",
-  "Workflow",
-  "Other",
-];
-// TODO: duplicate array
-const nameTypeOptions = ["Personal", "Organizational"];
-
-const nameIdentifierSchemeOptions = ["GND", "ORCID"];
-const affiliationIdentifierSchemeOptions = ["ROR", "GRID", "ISNI", "Other"];
-
-const descriptionTypes = ["Abstract", "Methods", "TechnicalInfo"];
 export default function RecommendedFields() {
   const { id } = useParams<{ id: string }>();
   // 100% sure id will be there
@@ -157,29 +30,29 @@ export default function RecommendedFields() {
   const saved = getDraftById(id)?.recommended || {};
   //const saved = loadFormDraft().recommended || {};
   const navigate = useNavigate();
-    const [isSaved, setIsSaved] = useState(false);
-    const timeoutRef = useRef<NodeJS.Timeout>(null);
-  
-    // Clean up timeout on component unmount
-    useEffect(() => {
-      return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-      };
-    }, []);
-  
-    // Reset the saved status after 1 second
-    useEffect(() => {
-      if (isSaved) {
-        timeoutRef.current = setTimeout(() => setIsSaved(false), 1000);
+  const [isSaved, setIsSaved] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout>(null);
+
+  // Clean up timeout on component unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
-      return () => {
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-      };
-    }, [isSaved]);
+    };
+  }, []);
+
+  // Reset the saved status after 1 second
+  useEffect(() => {
+    if (isSaved) {
+      timeoutRef.current = setTimeout(() => setIsSaved(false), 1000);
+    }
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [isSaved]);
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
 
@@ -432,12 +305,10 @@ export default function RecommendedFields() {
                     className="flex-1"
                     error={getError(`subjects.${index}.subject`)}
                   />
-                  <SelectField
+                  <InputField
                     name={`subjects[${index}].subjectScheme`}
                     defaultValue={savedSubject.subjectScheme}
                     placeholder="Subject Scheme"
-                    triggerClassName="w-[240px]"
-                    options={subjectSchemeOptions}
                     error={getError(`subjects.${index}.subjectScheme`)}
                   />
                 </div>
@@ -571,12 +442,10 @@ export default function RecommendedFields() {
                       `contributors.${index}.affiliationIdentifier`
                     )}
                   />
-                  <SelectField
+                  <InputField
                     name={`contributors[${index}].affiliationIdentifierScheme`}
                     defaultValue={savedContributor.affiliationIdentifierScheme}
-                    triggerClassName="w-full"
                     placeholder="Affiliation ID Scheme"
-                    options={affiliationIdentifierSchemeOptions}
                     error={getError(
                       `contributors.${index}.affiliationIdentifierScheme`
                     )}

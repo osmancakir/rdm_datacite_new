@@ -7,7 +7,7 @@ import { getDrafts, deleteDraft, type FormDataDraft } from "@/lib/localStorage";
 import { formatDistanceToNow } from "date-fns";
 import { CodeXml } from "lucide-react";
 import { Input } from "@/components/ui/input";
-// TODO: could be improved
+// TODO: could be improved: Add preview of xml and load to form?
 const exampleProjects = [
   {
     title: "Bayerisches Musiker-Lexikon Online",

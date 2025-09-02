@@ -8,39 +8,10 @@ import { saveDraftStep, getDraftById } from "@/lib/localStorage";
 import { hasAnyValue } from "@/lib/utils";
 import { PlusIcon, XIcon, CheckIcon } from "lucide-react";
 import { OtherFieldsSchema, type OtherFieldsType } from "@/types/fields";
-
-const alternateIdentifierTypeOptions = [
-  "ARK",
-  "arXiv",
-  "bibcode",
-  "DOI",
-  "EAN13",
-  "EISSN",
-  "Handle",
-  "IGSN",
-  "ISBN",
-  "ISSN",
-  "ISTC",
-  "LISSN",
-  "LSID",
-  "PMID",
-  "PURL",
-  "UPC",
-  "URL",
-  "URN",
-  "w3id",
-];
-
-const funderIdentifierTypes = [
-  "Crossref Funder ID",
-  "GRID",
-  "ISNI",
-  "ROR",
-  "Other",
-];
+import { funderIdentifierTypes } from "@/types/controlledLists";
 
 export type FunderIdentifierType = (typeof funderIdentifierTypes)[number];
-
+// TODO: Related Item fieldset need to be added
 export default function OtherFields() {
   const { id } = useParams<{ id: string }>();
   // 100% sure id will be there
@@ -182,8 +153,7 @@ export default function OtherFields() {
   };
 
   const handleSaveAndBack = () => {
-    // TODO: write proper action later for now it should save everything to the storage
-    // even though the user went back
+    // save and go back
     if (validateAndSave()) {
       navigate(`/dashboard/add-data/${id}/recommended-fields`);
     }
@@ -236,11 +206,10 @@ export default function OtherFields() {
                     />
                   </div>
                   <div>
-                    <SelectField
+                    <InputField
                       name={`alternateIdentifiers[${index}].alternateIdentifierType`}
                       defaultValue={savedAltId.alternateIdentifierType}
                       placeholder="Identifier Type"
-                      options={alternateIdentifierTypeOptions}
                       error={getError(
                         `alternateIdentifiers.${index}.alternateIdentifierType`
                       )}

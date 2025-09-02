@@ -10,7 +10,10 @@ export type Contributor = {
   nameIdentifierScheme?: string;
   schemeURI?: string;
   affiliation?: string;
-  lang?: string;
+  affiliationIdentifier?: string;
+  affiliationIdentifierScheme?: string;
+  affiliationSchemeURI?: string;
+  nameType?: string;
 };
 
 export type Subject = {
@@ -70,14 +73,6 @@ export type FormDataDraft = {
   recommended?: RecommendedFields;
   other?: any;
 };
-
-const funderIdentifierTypes = [
-  "Crossref Funder ID",
-  "GRID",
-  "ISNI",
-  "ROR",
-  "Other",
-] as const;
 
 // Example usage of xml:lang pattern
 // lang: z.string().trim().regex(xmlLangPattern, {
@@ -146,7 +141,7 @@ const IdentifierSchema = z.object({
 const TitleSchema = z.object({
   title: req("Title"),
   lang: optionalXmlLang,
-  titleType: req("Title type"),
+  titleType: optionalString,
 });
 
 /** ---------- Creator (mandatory block) ---------- */
@@ -155,7 +150,6 @@ const TitleSchema = z.object({
    - creatorName - lang is optional
    - givenName, familyName are optional
    - nameIdentifier, nameIdentifierScheme are optional but if nameIdentifier -> nameIdentifierScheme required and vice versa. 
-      - TODO: Suggestion: schemeURI must also be added here? Already handled in the xml generation; all attributes are only added if the value is present.
    - affiliation is optional: TODO: 4.6 have: affiliationIdentifier, affiliationIdentifierScheme, affiliationSchemeURI: not implemented yet
 */
 
@@ -191,7 +185,6 @@ const CreatorSchema = z
   - name is required
   - publisher - lang is optional.
   - publisherIdentifier, publisherIdentifierScheme are optional but If publisherIdentifier is provided, publisherIdentifierScheme is required and vice versa.
-    - TODO: Suggestion: schemeURI must also be added here? Already handled in the xml generation; all attributes are only added if the value is present.
 */
 const PublisherSchema = z
   .object({
@@ -263,8 +256,6 @@ export type MandatoryFieldsType = z.infer<typeof MandatoryFieldsSchema>;
 /** ---------- Subject (recommended block) ---------- */
 /**
   - all fields are optional
-  - TODO: Suggestion: if subject is not provided but other fields are filled show a warning that nothing will be saved?
-    Already handled in the xml generation; all attributes are only added if the value is present.
  */
 export const SubjectSchema = z.object({
   subject: optionalString,
