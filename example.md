@@ -1031,3 +1031,178 @@
 </resource>
 
 ```
+
+## App Generated Json example: 
+
+```json
+[
+    {
+        "id": "ec963a4d-6a8a-4915-a1bd-f835799e0d3c",
+        "title": "test2",
+        "createdAt": "2025-09-02T08:43:07.108Z",
+        "lastUpdated": "2025-09-02T11:49:28.534Z",
+        "mandatory": {
+            "identifier": {
+                "identifier": "To be assigned",
+                "identifierType": "DOI"
+            },
+            "titles": [
+                {
+                    "title": "test",
+                    "lang": "de",
+                    "titleType": "AlternativeTitle"
+                }
+            ],
+            "creators": [
+                {
+                    "name": "Osman",
+                    "nameType": "Personal",
+                    "lang": "de",
+                    "givenName": "osman",
+                    "familyName": "cakir",
+                    "nameIdentifier": "test",
+                    "nameIdentifierScheme": "ISNI",
+                    "schemeURI": "http://example.com",
+                    "affiliation": "doctor"
+                }
+            ],
+            "publisher": {
+                "name": "test",
+                "lang": "de",
+                "publisherIdentifier": "test",
+                "publisherIdentifierScheme": "test",
+                "schemeURI": "http://example.com"
+            },
+            "publicationYear": "1244",
+            "resourceType": {
+                "type": "test",
+                "general": "Text"
+            }
+        },
+        "recommended": {
+            "subjects": [
+                {
+                    "subject": "test_subject",
+                    "subjectScheme": "test_scheme",
+                    "schemeURI": "http://example.com",
+                    "valueURI": "http://example.com",
+                    "classificationCode": "123124",
+                    "lang": "de"
+                }
+            ],
+            "contributors": [
+                {
+                    "name": "Osman Cakir",
+                    "type": "DataCollector",
+                    "givenName": "osm",
+                    "familyName": "cak",
+                    "nameIdentifier": "osman_name",
+                    "nameIdentifierScheme": "ISNI",
+                    "schemeURI": "http://example.com",
+                    "affiliation": "doctor",
+                    "affiliationIdentifier": "aff_ident",
+                    "affiliationIdentifierScheme": "gnd",
+                    "affiliationSchemeURI": "https://example.com"
+                }
+            ],
+            "dates": [
+                {
+                    "date": "1989-02-02",
+                    "dateType": "Accepted",
+                    "dateInformation": "2323"
+                }
+            ],
+            "relatedIdentifiers": [
+                {
+                    "relatedIdentifier": "doi",
+                    "relatedIdentifierType": "RRID",
+                    "relationType": "HasMetadata",
+                    "relatedMetadataScheme": "test",
+                    "schemeURI": "http://example.com",
+                    "schemeType": "ddsd",
+                    "resourceTypeGeneral": "Service"
+                }
+            ],
+            "descriptions": [
+                {
+                    "description": "test_description",
+                    "descriptionType": "Abstract",
+                    "lang": "en"
+                }
+            ],
+            "geoLocations": [
+                {
+                    "place": "werwer",
+                    "point": {
+                        "lat": "11",
+                        "long": "22"
+                    },
+                    "box": {
+                        "southLat": "23",
+                        "westLong": "13",
+                        "northLat": "24",
+                        "eastLong": "15"
+                    },
+                    "polygon": [
+                        {
+                            "lat": "11",
+                            "long": "12"
+                        },
+                        {
+                            "lat": "12",
+                            "long": "13"
+                        },
+                        {
+                            "lat": "13",
+                            "long": "14"
+                        },
+                        {
+                            "lat": "15",
+                            "long": "16"
+                        }
+                    ]
+                }
+            ]
+        },
+        "other": {
+            "language": "de",
+            "alternateIdentifiers": [
+                {
+                    "alternateIdentifier": "test",
+                    "alternateIdentifierType": "detet"
+                }
+            ],
+            "sizes": [
+                "12"
+            ],
+            "formats": [
+                "pdf"
+            ],
+            "version": "1.0",
+            "rights": [
+                {
+                    "rights": "cc",
+                    "rightsURI": "https://exampfle.com",
+                    "rightsIdentifier": "cc-by-0",
+                    "rightsIdentifierScheme": "risc",
+                    "schemeURI": "https://example.com",
+                    "lang": "de"
+                }
+            ],
+            "fundingReferences": [
+                {
+                    "funderName": "test",
+                    "funderIdentifier": "test",
+                    "funderIdentifierType": "GRID",
+                    "schemeURI": "https://exampsle.com",
+                    "awardNumber": "123",
+                    "awardURI": "https://example.com",
+                    "awardTitle": "great award",
+                    "awardTitleLang": "de"
+                }
+            ]
+        }
+    }
+]
+
+```
